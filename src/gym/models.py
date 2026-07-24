@@ -405,6 +405,34 @@ class DangKyGoiTap(models.Model):
     def __str__(self):
         return f"{self.ma_dk} - {self.hoi_vien} - {self.goi_tap}"
 
+    @property
+    def so_buoi_pt_da_dung(self):
+        return self.cac_lich_tap_pt.filter(
+            trang_thai="HoanThanh",
+        ).count()
+
+    @property
+    def so_buoi_pt_da_len_lich(self):
+        return self.cac_lich_tap_pt.filter(
+            trang_thai="DaLenLich",
+        ).count()
+
+    @property
+    def so_buoi_pt_con_lai(self):
+        return max(
+            self.so_buoi_pt_dang_ky - self.so_buoi_pt_da_dung,
+            0,
+        )
+
+    @property
+    def so_buoi_pt_co_the_xep_lich(self):
+        return max(
+            self.so_buoi_pt_dang_ky
+            - self.so_buoi_pt_da_dung
+            - self.so_buoi_pt_da_len_lich,
+            0,
+        )
+
 class HoaDon(models.Model):
     class PhuongThucThanhToan(models.TextChoices):
         TIEN_MAT = "TienMat", "Tiền mặt"
@@ -488,3 +516,205 @@ class HoaDon(models.Model):
 
     def __str__(self):
         return f"{self.ma_hd} - {self.dang_ky.ma_dk}"
+
+class LichTapPT(models.Model):
+    class TrangThai(models.TextChoices):
+        DA_LEN_LICH = "DaLenLich", "Đã lên lịch"
+        HOAN_THANH = "HoanThanh", "Hoàn thành"
+        VANG = "Vang", "Vắng"
+        HUY = "Huy", "Hủy"
+
+    ma_lich = models.CharField(
+        max_length=10,
+        primary_key=True,
+        db_column="MaLich",
+    )
+
+    dang_ky = models.ForeignKey(
+        DangKyGoiTap,
+        on_delete=models.PROTECT,
+        db_column="MaDK",
+        related_name="cac_lich_tap_pt",
+    )
+
+    huan_luyen_vien = models.ForeignKey(
+        HuanLuyenVien,
+        on_delete=models.PROTECT,
+        db_column="MaPT",
+        related_name="cac_lich_tap",
+    )
+
+    le_tan = models.ForeignKey(
+        LeTan,
+        on_delete=models.PROTECT,
+        db_column="MaLT",
+        related_name="cac_lich_pt_da_sap_xep",
+    )
+
+    ngay_tap = models.DateField(
+        db_column="NgayTap",
+    )
+
+    gio_bat_dau = models.TimeField(
+        db_column="GioBatDau",
+    )
+
+    gio_ket_thuc = models.TimeField(
+        db_column="GioKetThuc",
+    )
+
+    trang_thai = models.CharField(
+        max_length=20,
+        choices=TrangThai.choices,
+        default=TrangThai.DA_LEN_LICH,
+        db_column="TrangThai",
+    )
+
+    ghi_chu = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        db_column="GhiChu",
+    )
+
+    class Meta:
+        db_table = "LichTapPT"
+        ordering = ("-ngay_tap", "-gio_bat_dau", "ma_lich")
+
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    gio_ket_thuc__gt=models.F("gio_bat_dau")
+                ),
+                name="CK_LichTapPT_GioTap",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    trang_thai__in=[
+                        "DaLenLich",
+                        "HoanThanh",
+                        "Vang",
+                        "Huy",
+                    ]
+                ),
+                name="CK_LichTapPT_TrangThai",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+
+        errors = {}
+
+        if (
+            self.gio_bat_dau
+            and self.gio_ket_thuc
+            and self.gio_ket_thuc <= self.gio_bat_dau
+        ):
+            errors["gio_ket_thuc"] = (
+                "Giờ kết thúc phải lớn hơn giờ bắt đầu."
+            )
+
+        if self.dang_ky_id:
+            dang_ky = self.dang_ky
+
+        if self._state.adding:
+            dang_ky.gan_du_lieu_tu_dong()
+
+            if (
+                dang_ky.trang_thai
+                != DangKyGoiTap.TrangThai.HOAT_DONG
+            ):
+                errors["dang_ky"] = (
+                    "Chỉ được xếp lịch khi đăng ký gói đang hoạt động."
+                )
+
+            if dang_ky.so_buoi_pt_dang_ky <= 0:
+                errors["dang_ky"] = (
+                    "Đăng ký này không có buổi tập PT."
+                )
+
+            if (
+                self.ngay_tap
+                and not (
+                    dang_ky.ngay_bat_dau
+                    <= self.ngay_tap
+                    <= dang_ky.ngay_ket_thuc
+                )
+            ):
+                errors["ngay_tap"] = (
+                    "Ngày tập phải nằm trong thời hạn của gói đăng ký."
+                )
+
+            if self.trang_thai in [
+                self.TrangThai.DA_LEN_LICH,
+                self.TrangThai.HOAN_THANH,
+            ]:
+                cac_lich_khac = LichTapPT.objects.filter(
+                    dang_ky_id=self.dang_ky_id,
+                    trang_thai__in=[
+                        self.TrangThai.DA_LEN_LICH,
+                        self.TrangThai.HOAN_THANH,
+                    ],
+                ).exclude(pk=self.pk)
+
+                if (
+                    cac_lich_khac.count()
+                    >= dang_ky.so_buoi_pt_dang_ky
+                ):
+                    errors["dang_ky"] = (
+                        "Đăng ký này không còn buổi PT có thể xếp lịch."
+                    )
+
+        if (
+            self.ngay_tap
+            and self.gio_bat_dau
+            and self.gio_ket_thuc
+            and self.trang_thai != self.TrangThai.HUY
+        ):
+            lich_trung_pt = LichTapPT.objects.filter(
+                huan_luyen_vien_id=self.huan_luyen_vien_id,
+                ngay_tap=self.ngay_tap,
+                gio_bat_dau__lt=self.gio_ket_thuc,
+                gio_ket_thuc__gt=self.gio_bat_dau,
+            ).exclude(
+                pk=self.pk,
+            ).exclude(
+                trang_thai=self.TrangThai.HUY,
+            )
+
+            if lich_trung_pt.exists():
+                errors["huan_luyen_vien"] = (
+                    "Huấn luyện viên đã có lịch trong thời gian này."
+                )
+
+            if self.dang_ky_id:
+                lich_trung_hoi_vien = LichTapPT.objects.filter(
+                    dang_ky__hoi_vien_id=self.dang_ky.hoi_vien_id,
+                    ngay_tap=self.ngay_tap,
+                    gio_bat_dau__lt=self.gio_ket_thuc,
+                    gio_ket_thuc__gt=self.gio_bat_dau,
+                ).exclude(
+                    pk=self.pk,
+                ).exclude(
+                    trang_thai=self.TrangThai.HUY,
+                )
+
+                if lich_trung_hoi_vien.exists():
+                    errors["dang_ky"] = (
+                        "Hội viên đã có lịch PT trong thời gian này."
+                    )
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return (
+            f"{self.ma_lich} - "
+            f"{self.ngay_tap} "
+            f"{self.gio_bat_dau}"
+        )
