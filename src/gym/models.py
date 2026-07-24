@@ -404,3 +404,87 @@ class DangKyGoiTap(models.Model):
 
     def __str__(self):
         return f"{self.ma_dk} - {self.hoi_vien} - {self.goi_tap}"
+
+class HoaDon(models.Model):
+    class PhuongThucThanhToan(models.TextChoices):
+        TIEN_MAT = "TienMat", "Tiền mặt"
+        CHUYEN_KHOAN = "ChuyenKhoan", "Chuyển khoản"
+        THE = "The", "Thẻ"
+
+    ma_hd = models.CharField(
+        max_length=10,
+        primary_key=True,
+        db_column="MaHD",
+    )
+
+    dang_ky = models.OneToOneField(
+        DangKyGoiTap,
+        on_delete=models.PROTECT,
+        db_column="MaDK",
+        related_name="hoa_don",
+    )
+
+    le_tan = models.ForeignKey(
+        LeTan,
+        on_delete=models.PROTECT,
+        db_column="MaLT",
+        related_name="cac_hoa_don_da_lap",
+    )
+
+    ngay_lap = models.DateTimeField(
+        default=timezone.now,
+        db_column="NgayLap",
+    )
+
+    tong_tien = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        editable=False,
+        db_column="TongTien",
+    )
+
+    phuong_thuc_thanh_toan = models.CharField(
+        max_length=30,
+        choices=PhuongThucThanhToan.choices,
+        db_column="PhuongThucThanhToan",
+    )
+
+    ghi_chu = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        db_column="GhiChu",
+    )
+
+    class Meta:
+        db_table = "HoaDon"
+        ordering = ("-ngay_lap", "ma_hd")
+
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(tong_tien__gte=0),
+                name="CK_HoaDon_TongTien",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    phuong_thuc_thanh_toan__in=[
+                        "TienMat",
+                        "ChuyenKhoan",
+                        "The",
+                    ]
+                ),
+                name="CK_HoaDon_PhuongThucThanhToan",
+            ),
+        ]
+
+    def gan_tong_tien(self):
+        if self._state.adding and self.dang_ky_id:
+            self.tong_tien = self.dang_ky.goi_tap.gia_tien
+
+    def save(self, *args, **kwargs):
+        self.gan_tong_tien()
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.ma_hd} - {self.dang_ky.ma_dk}"
