@@ -407,13 +407,13 @@ class DangKyGoiTap(models.Model):
 
     @property
     def so_buoi_pt_da_dung(self):
-        return self.cac_lich_tap_pt.filter(
+        return self.cac_buoi_tap_pt.filter(
             trang_thai="HoanThanh",
         ).count()
 
     @property
     def so_buoi_pt_da_len_lich(self):
-        return self.cac_lich_tap_pt.filter(
+        return self.cac_buoi_tap_pt.filter(
             trang_thai="DaLenLich",
         ).count()
 
@@ -517,38 +517,38 @@ class HoaDon(models.Model):
     def __str__(self):
         return f"{self.ma_hd} - {self.dang_ky.ma_dk}"
 
-class LichTapPT(models.Model):
+class BuoiTapPT(models.Model):
     class TrangThai(models.TextChoices):
         DA_LEN_LICH = "DaLenLich", "Đã lên lịch"
         HOAN_THANH = "HoanThanh", "Hoàn thành"
         VANG = "Vang", "Vắng"
         HUY = "Huy", "Hủy"
 
-    ma_lich = models.CharField(
+    ma_buoi = models.CharField(
         max_length=10,
         primary_key=True,
-        db_column="MaLich",
+        db_column="MaBuoi",
     )
 
     dang_ky = models.ForeignKey(
         DangKyGoiTap,
         on_delete=models.PROTECT,
         db_column="MaDK",
-        related_name="cac_lich_tap_pt",
+        related_name="cac_buoi_tap_pt",
     )
 
     huan_luyen_vien = models.ForeignKey(
         HuanLuyenVien,
         on_delete=models.PROTECT,
         db_column="MaPT",
-        related_name="cac_lich_tap",
+        related_name="cac_buoi_tap_pt",
     )
 
     le_tan = models.ForeignKey(
         LeTan,
         on_delete=models.PROTECT,
         db_column="MaLT",
-        related_name="cac_lich_pt_da_sap_xep",
+        related_name="cac_buoi_tap_pt_da_sap_xep",
     )
 
     ngay_tap = models.DateField(
@@ -578,15 +578,15 @@ class LichTapPT(models.Model):
     )
 
     class Meta:
-        db_table = "LichTapPT"
-        ordering = ("-ngay_tap", "-gio_bat_dau", "ma_lich")
+        db_table = "BuoiTapPT"
+        ordering = ("-ngay_tap", "-gio_bat_dau", "ma_buoi")
 
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(
                     gio_ket_thuc__gt=models.F("gio_bat_dau")
                 ),
-                name="CK_LichTapPT_GioTap",
+                name="CK_BuoiTapPT_GioTap",
             ),
             models.CheckConstraint(
                 condition=models.Q(
@@ -597,7 +597,7 @@ class LichTapPT(models.Model):
                         "Huy",
                     ]
                 ),
-                name="CK_LichTapPT_TrangThai",
+                name="CK_BuoiTapPT_TrangThai",
             ),
         ]
 
@@ -618,39 +618,42 @@ class LichTapPT(models.Model):
         if self.dang_ky_id:
             dang_ky = self.dang_ky
 
-        if self._state.adding:
-            dang_ky.gan_du_lieu_tu_dong()
-
-            if (
-                dang_ky.trang_thai
-                != DangKyGoiTap.TrangThai.HOAT_DONG
-            ):
-                errors["dang_ky"] = (
-                    "Chỉ được xếp lịch khi đăng ký gói đang hoạt động."
-                )
-
             if dang_ky.so_buoi_pt_dang_ky <= 0:
                 errors["dang_ky"] = (
                     "Đăng ký này không có buổi tập PT."
                 )
 
-            if (
-                self.ngay_tap
-                and not (
-                    dang_ky.ngay_bat_dau
-                    <= self.ngay_tap
-                    <= dang_ky.ngay_ket_thuc
+            if self.ngay_tap:
+                if self.ngay_tap < dang_ky.ngay_dang_ky:
+                    errors["ngay_tap"] = (
+                        "Ngày tập không được trước ngày đăng ký gói PT."
+                    )
+
+                elif self.ngay_tap > dang_ky.ngay_ket_thuc:
+                    errors["ngay_tap"] = (
+                        "Ngày tập không được sau ngày kết thúc "
+                        "của đăng ký PT."
+                    )
+
+                co_quyen_vao_phong_tap = (
+                    DangKyGoiTap.objects.filter(
+                        hoi_vien_id=dang_ky.hoi_vien_id,
+                        ngay_bat_dau__lte=self.ngay_tap,
+                        ngay_ket_thuc__gte=self.ngay_tap,
+                    ).exists()
                 )
-            ):
-                errors["ngay_tap"] = (
-                    "Ngày tập phải nằm trong thời hạn của gói đăng ký."
-                )
+
+                if not co_quyen_vao_phong_tap:
+                    errors["ngay_tap"] = (
+                        "Tại ngày tập, hội viên không có gói tập "
+                        "còn hiệu lực để vào phòng gym."
+                    )
 
             if self.trang_thai in [
                 self.TrangThai.DA_LEN_LICH,
                 self.TrangThai.HOAN_THANH,
             ]:
-                cac_lich_khac = LichTapPT.objects.filter(
+                cac_buoi_khac = BuoiTapPT.objects.filter(
                     dang_ky_id=self.dang_ky_id,
                     trang_thai__in=[
                         self.TrangThai.DA_LEN_LICH,
@@ -659,11 +662,12 @@ class LichTapPT(models.Model):
                 ).exclude(pk=self.pk)
 
                 if (
-                    cac_lich_khac.count()
+                    cac_buoi_khac.count()
                     >= dang_ky.so_buoi_pt_dang_ky
                 ):
                     errors["dang_ky"] = (
-                        "Đăng ký này không còn buổi PT có thể xếp lịch."
+                        "Đăng ký này không còn buổi PT "
+                        "có thể xếp lịch."
                     )
 
         if (
@@ -672,7 +676,7 @@ class LichTapPT(models.Model):
             and self.gio_ket_thuc
             and self.trang_thai != self.TrangThai.HUY
         ):
-            lich_trung_pt = LichTapPT.objects.filter(
+            buoi_trung_pt = BuoiTapPT.objects.filter(
                 huan_luyen_vien_id=self.huan_luyen_vien_id,
                 ngay_tap=self.ngay_tap,
                 gio_bat_dau__lt=self.gio_ket_thuc,
@@ -683,13 +687,14 @@ class LichTapPT(models.Model):
                 trang_thai=self.TrangThai.HUY,
             )
 
-            if lich_trung_pt.exists():
+            if buoi_trung_pt.exists():
                 errors["huan_luyen_vien"] = (
-                    "Huấn luyện viên đã có lịch trong thời gian này."
+                    "Huấn luyện viên đã có buổi tập "
+                    "trong thời gian này."
                 )
 
             if self.dang_ky_id:
-                lich_trung_hoi_vien = LichTapPT.objects.filter(
+                buoi_trung_hoi_vien = BuoiTapPT.objects.filter(
                     dang_ky__hoi_vien_id=self.dang_ky.hoi_vien_id,
                     ngay_tap=self.ngay_tap,
                     gio_bat_dau__lt=self.gio_ket_thuc,
@@ -700,9 +705,10 @@ class LichTapPT(models.Model):
                     trang_thai=self.TrangThai.HUY,
                 )
 
-                if lich_trung_hoi_vien.exists():
+                if buoi_trung_hoi_vien.exists():
                     errors["dang_ky"] = (
-                        "Hội viên đã có lịch PT trong thời gian này."
+                        "Hội viên đã có buổi tập PT "
+                        "trong thời gian này."
                     )
 
         if errors:
@@ -714,7 +720,7 @@ class LichTapPT(models.Model):
 
     def __str__(self):
         return (
-            f"{self.ma_lich} - "
+            f"{self.ma_buoi} - "
             f"{self.ngay_tap} "
             f"{self.gio_bat_dau}"
         )
