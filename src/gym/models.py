@@ -192,3 +192,72 @@ class HuanLuyenVien(models.Model):
 
     def __str__(self):
         return f"{self.ma_pt} - {self.ho_ten}"
+
+class GoiTap(models.Model):
+    ma_goi = models.CharField(
+        max_length=10,
+        primary_key=True,
+        db_column="MaGoi",
+    )
+
+    ten_goi = models.CharField(
+        max_length=100,
+        db_column="TenGoi",
+    )
+
+    thoi_han_ngay = models.IntegerField(
+        db_column="ThoiHanNgay",
+    )
+
+    gia_tien = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        db_column="GiaTien",
+    )
+
+    co_pt = models.BooleanField(
+        default=False,
+        db_column="CoPT",
+    )
+
+    so_buoi_pt = models.IntegerField(
+        default=0,
+        db_column="SoBuoiPT",
+    )
+
+    mo_ta = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        db_column="MoTa",
+    )
+
+    trang_thai = models.BooleanField(
+        default=True,
+        db_column="TrangThai",
+    )
+
+    class Meta:
+        db_table = "GoiTap"
+        ordering = ("ma_goi",)
+
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(thoi_han_ngay__gt=0),
+                name="CK_GoiTap_ThoiHanNgay_Positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(gia_tien__gte=0),
+                name="CK_GoiTap_GiaTien_NonNegative",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(co_pt=False, so_buoi_pt=0)
+                    | models.Q(co_pt=True, so_buoi_pt__gt=0)
+                ),
+                name="CK_GoiTap_CoPT_SoBuoiPT",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.ma_goi} - {self.ten_goi}"
