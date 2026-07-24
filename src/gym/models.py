@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from datetime import timedelta
+from django.core.exceptions import ValidationError
 
 
 class GioiTinh(models.TextChoices):
@@ -261,3 +263,144 @@ class GoiTap(models.Model):
 
     def __str__(self):
         return f"{self.ma_goi} - {self.ten_goi}"
+
+class DangKyGoiTap(models.Model):
+    class TrangThai(models.TextChoices):
+        CHUA_KICH_HOAT = "ChuaKichHoat", "Chưa kích hoạt"
+        HOAT_DONG = "HoatDong", "Hoạt động"
+        HET_HAN = "HetHan", "Hết hạn"
+
+    ma_dk = models.CharField(
+        max_length=10,
+        primary_key=True,
+        db_column="MaDK",
+    )
+
+    hoi_vien = models.ForeignKey(
+        HoiVien,
+        on_delete=models.PROTECT,
+        db_column="MaHV",
+        related_name="cac_dang_ky_goi",
+    )
+
+    goi_tap = models.ForeignKey(
+        GoiTap,
+        on_delete=models.PROTECT,
+        db_column="MaGoi",
+        related_name="cac_luot_dang_ky",
+    )
+
+    ngay_dang_ky = models.DateField(
+        default=timezone.localdate,
+        db_column="NgayDangKy",
+    )
+
+    ngay_bat_dau = models.DateField(
+        db_column="NgayBatDau",
+    )
+
+    ngay_ket_thuc = models.DateField(
+        editable=False,
+        db_column="NgayKetThuc",
+    )
+
+    so_buoi_pt_dang_ky = models.IntegerField(
+        default=0,
+        editable=False,
+        db_column="SoBuoiPTDangKy",
+    )
+
+    trang_thai = models.CharField(
+        max_length=20,
+        choices=TrangThai.choices,
+        default=TrangThai.CHUA_KICH_HOAT,
+        editable=False,
+        db_column="TrangThai",
+    )
+
+    ghi_chu = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        db_column="GhiChu",
+    )
+
+    class Meta:
+        db_table = "DangKyGoiTap"
+        ordering = ("-ngay_dang_ky", "ma_dk")
+
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    ngay_ket_thuc__gte=models.F("ngay_bat_dau")
+                ),
+                name="CK_DangKy_NgayKetThuc",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(so_buoi_pt_dang_ky__gte=0),
+                name="CK_DangKy_SoBuoiPTDangKy",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    trang_thai__in=[
+                        "ChuaKichHoat",
+                        "HoatDong",
+                        "HetHan",
+                    ]
+                ),
+                name="CK_DangKy_TrangThai",
+            ),
+        ]
+
+    def gan_du_lieu_tu_dong(self):
+        if (
+            self._state.adding
+            and self.goi_tap_id
+            and self.ngay_bat_dau
+        ):
+            self.ngay_ket_thuc = (
+                self.ngay_bat_dau
+                + timedelta(days=self.goi_tap.thoi_han_ngay - 1)
+            )
+
+            self.so_buoi_pt_dang_ky = self.goi_tap.so_buoi_pt
+
+        if self.ngay_bat_dau and self.ngay_ket_thuc:
+            hom_nay = timezone.localdate()
+
+            if hom_nay < self.ngay_bat_dau:
+                self.trang_thai = self.TrangThai.CHUA_KICH_HOAT
+            elif hom_nay <= self.ngay_ket_thuc:
+                self.trang_thai = self.TrangThai.HOAT_DONG
+            else:
+                self.trang_thai = self.TrangThai.HET_HAN
+
+    def clean(self):
+        super().clean()
+        self.gan_du_lieu_tu_dong()
+
+        if not (
+            self.hoi_vien_id
+            and self.ngay_bat_dau
+            and self.ngay_ket_thuc
+        ):
+            return
+
+        dang_ky_trung = DangKyGoiTap.objects.filter(
+            hoi_vien_id=self.hoi_vien_id,
+            ngay_bat_dau__lte=self.ngay_ket_thuc,
+            ngay_ket_thuc__gte=self.ngay_bat_dau,
+        ).exclude(pk=self.pk)
+
+        if dang_ky_trung.exists():
+            raise ValidationError(
+                "Hội viên đã có gói tập bị chồng thời gian."
+            )
+
+    def save(self, *args, **kwargs):
+        self.gan_du_lieu_tu_dong()
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.ma_dk} - {self.hoi_vien} - {self.goi_tap}"
