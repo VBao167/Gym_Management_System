@@ -724,3 +724,92 @@ class BuoiTapPT(models.Model):
             f"{self.ngay_tap} "
             f"{self.gio_bat_dau}"
         )
+
+class DiemDanh(models.Model):
+    ma_dd = models.CharField(
+        max_length=10,
+        primary_key=True,
+        db_column="MaDD",
+    )
+
+    hoi_vien = models.ForeignKey(
+        HoiVien,
+        on_delete=models.PROTECT,
+        db_column="MaHV",
+        related_name="cac_lan_diem_danh",
+    )
+
+    le_tan = models.ForeignKey(
+        LeTan,
+        on_delete=models.PROTECT,
+        db_column="MaLT",
+        related_name="cac_lan_diem_danh_da_ghi_nhan",
+    )
+
+    thoi_gian_diem_danh = models.DateTimeField(
+        default=timezone.now,
+        db_column="ThoiGianDiemDanh",
+    )
+
+    ghi_chu = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        db_column="GhiChu",
+    )
+
+    class Meta:
+        db_table = "DiemDanh"
+        ordering = ("-thoi_gian_diem_danh", "ma_dd")
+
+    def cap_nhat_trang_thai_dang_ky(self):
+        if not self.hoi_vien_id:
+            return
+
+        cac_dang_ky = DangKyGoiTap.objects.filter(
+            hoi_vien_id=self.hoi_vien_id,
+        )
+
+        for dang_ky in cac_dang_ky:
+            trang_thai_cu = dang_ky.trang_thai
+
+            dang_ky.gan_du_lieu_tu_dong()
+
+            if dang_ky.trang_thai != trang_thai_cu:
+                DangKyGoiTap.objects.filter(
+                    pk=dang_ky.pk,
+                ).update(
+                    trang_thai=dang_ky.trang_thai,
+                )
+
+    def clean(self):
+        super().clean()
+
+        if not self.hoi_vien_id:
+            return
+
+        co_goi_hoat_dong = DangKyGoiTap.objects.filter(
+            hoi_vien_id=self.hoi_vien_id,
+            trang_thai=DangKyGoiTap.TrangThai.HOAT_DONG,
+        ).exists()
+
+        if not co_goi_hoat_dong:
+            raise ValidationError(
+                {
+                    "hoi_vien": (
+                        "Hội viên không có gói tập đang hoạt động."
+                    )
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        self.cap_nhat_trang_thai_dang_ky()
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return (
+            f"{self.ma_dd} - "
+            f"{self.hoi_vien} - "
+            f"{self.thoi_gian_diem_danh}"
+        )
