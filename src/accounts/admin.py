@@ -6,6 +6,7 @@ from .models import TaiKhoan
 
 @admin.register(TaiKhoan)
 class TaiKhoanAdmin(UserAdmin):
+    readonly_fields = ("ma_tk",)
     list_display = (
         "ma_tk",
         "username",
@@ -46,7 +47,6 @@ class TaiKhoanAdmin(UserAdmin):
             "Thông tin hệ thống Gym",
             {
                 "fields": (
-                    "ma_tk",
                     "vai_tro",
                 )
             },

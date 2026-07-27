@@ -1,20 +1,23 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from common.ma_tu_dong import MaTuDongMixin
 
 
-class TaiKhoan(AbstractUser):
+class TaiKhoan(MaTuDongMixin, AbstractUser):
+    MA_PREFIX = "TK"
     class VaiTro(models.TextChoices):
         ADMIN = "Admin", "Quản trị viên"
         LE_TAN = "LeTan", "Lễ tân"
         PT = "PT", "Huấn luyện viên"
         HOI_VIEN = "HoiVien", "Hội viên"
 
-    REQUIRED_FIELDS = ["ma_tk", "vai_tro"]
+    REQUIRED_FIELDS = ["vai_tro"]
 
     ma_tk = models.CharField(
         max_length=10,
         primary_key=True,
+        editable=False,
         db_column="MaTK",
     )
 
