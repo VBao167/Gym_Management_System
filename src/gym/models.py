@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 from django.core.exceptions import ValidationError
+from common.ma_tu_dong import MaTuDongMixin
 
 
 class GioiTinh(models.TextChoices):
@@ -195,10 +196,12 @@ class HuanLuyenVien(models.Model):
     def __str__(self):
         return f"{self.ma_pt} - {self.ho_ten}"
 
-class GoiTap(models.Model):
+class GoiTap(MaTuDongMixin, models.Model):
+    MA_PREFIX = "Goi"
     ma_goi = models.CharField(
         max_length=10,
         primary_key=True,
+        editable=False,
         db_column="MaGoi",
     )
 
