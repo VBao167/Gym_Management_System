@@ -25,55 +25,76 @@ def _tao_tai_khoan(
     return tai_khoan
 
 
-@transaction.atomic
-def tao_hoi_vien(**du_lieu):
-    hoi_vien = HoiVien(**du_lieu)
-    hoi_vien.gan_ma_tu_dong()
+def _tao_ho_so_va_tai_khoan(
+    *,
+    ho_so,
+    ten_truong_ma,
+    vai_tro,
+):
+    ho_so.gan_ma_tu_dong()
 
     tai_khoan = _tao_tai_khoan(
-        username=hoi_vien.ma_hv,
-        vai_tro=TaiKhoan.VaiTro.HOI_VIEN,
-        trang_thai=hoi_vien.trang_thai,
+        username=getattr(ho_so, ten_truong_ma),
+        vai_tro=vai_tro,
+        trang_thai=ho_so.trang_thai,
     )
 
-    hoi_vien.tai_khoan = tai_khoan
-    hoi_vien.full_clean()
-    hoi_vien.save()
+    ho_so.tai_khoan = tai_khoan
+    ho_so.full_clean()
+    ho_so.save()
 
-    return hoi_vien
+    return ho_so
+
+
+@transaction.atomic
+def tao_hoi_vien(**du_lieu):
+    return _tao_ho_so_va_tai_khoan(
+        ho_so=HoiVien(**du_lieu),
+        ten_truong_ma="ma_hv",
+        vai_tro=TaiKhoan.VaiTro.HOI_VIEN,
+    )
+
+
+@transaction.atomic
+def tao_hoi_vien_tu_doi_tuong(hoi_vien):
+    return _tao_ho_so_va_tai_khoan(
+        ho_so=hoi_vien,
+        ten_truong_ma="ma_hv",
+        vai_tro=TaiKhoan.VaiTro.HOI_VIEN,
+    )
 
 
 @transaction.atomic
 def tao_le_tan(**du_lieu):
-    le_tan = LeTan(**du_lieu)
-    le_tan.gan_ma_tu_dong()
-
-    tai_khoan = _tao_tai_khoan(
-        username=le_tan.ma_lt,
+    return _tao_ho_so_va_tai_khoan(
+        ho_so=LeTan(**du_lieu),
+        ten_truong_ma="ma_lt",
         vai_tro=TaiKhoan.VaiTro.LE_TAN,
-        trang_thai=le_tan.trang_thai,
     )
 
-    le_tan.tai_khoan = tai_khoan
-    le_tan.full_clean()
-    le_tan.save()
 
-    return le_tan
+@transaction.atomic
+def tao_le_tan_tu_doi_tuong(le_tan):
+    return _tao_ho_so_va_tai_khoan(
+        ho_so=le_tan,
+        ten_truong_ma="ma_lt",
+        vai_tro=TaiKhoan.VaiTro.LE_TAN,
+    )
 
 
 @transaction.atomic
 def tao_huan_luyen_vien(**du_lieu):
-    huan_luyen_vien = HuanLuyenVien(**du_lieu)
-    huan_luyen_vien.gan_ma_tu_dong()
-
-    tai_khoan = _tao_tai_khoan(
-        username=huan_luyen_vien.ma_pt,
+    return _tao_ho_so_va_tai_khoan(
+        ho_so=HuanLuyenVien(**du_lieu),
+        ten_truong_ma="ma_pt",
         vai_tro=TaiKhoan.VaiTro.PT,
-        trang_thai=huan_luyen_vien.trang_thai,
     )
 
-    huan_luyen_vien.tai_khoan = tai_khoan
-    huan_luyen_vien.full_clean()
-    huan_luyen_vien.save()
 
-    return huan_luyen_vien
+@transaction.atomic
+def tao_huan_luyen_vien_tu_doi_tuong(huan_luyen_vien):
+    return _tao_ho_so_va_tai_khoan(
+        ho_so=huan_luyen_vien,
+        ten_truong_ma="ma_pt",
+        vai_tro=TaiKhoan.VaiTro.PT,
+    )

@@ -11,15 +11,69 @@ from .models import (
     LeTan,
 )
 
+from .services.nguoi_dung import (
+    tao_hoi_vien_tu_doi_tuong,
+    tao_huan_luyen_vien_tu_doi_tuong,
+    tao_le_tan_tu_doi_tuong,
+)
+
 
 admin.site.site_header = "Hệ thống Quản lý Phòng Gym"
 admin.site.site_title = "Gym Management"
 admin.site.index_title = "Trang quản trị hệ thống"
 
+class HoSoNguoiDungAdmin(admin.ModelAdmin):
+    truong_ma = ""
+    cac_truong_ho_so = ()
+
+    def get_fields(self, request, obj=None):
+        fields = [self.truong_ma]
+
+        if obj:
+            fields.append("tai_khoan")
+
+        fields.extend(self.cac_truong_ho_so)
+        return tuple(fields)
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = [self.truong_ma]
+
+        if obj:
+            fields.append("tai_khoan")
+
+        return tuple(fields)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            self.tao_ho_so_tu_doi_tuong(obj)
+            return
+
+        super().save_model(request, obj, form, change)
+
+        # Hồ sơ ngừng hoạt động thì khóa tài khoản ngay.
+        # Hồ sơ hoạt động lại không tự mở tài khoản.
+        if not obj.trang_thai and obj.tai_khoan.is_active:
+            obj.tai_khoan.is_active = False
+            obj.tai_khoan.save(update_fields=["is_active"])
+
+    def tao_ho_so_tu_doi_tuong(self, obj):
+        raise NotImplementedError
+
 
 @admin.register(HoiVien)
-class HoiVienAdmin(admin.ModelAdmin):
-    readonly_fields = ("ma_hv",)
+class HoiVienAdmin(HoSoNguoiDungAdmin):
+    truong_ma = "ma_hv"
+    cac_truong_ho_so = (
+        "ho_ten",
+        "gioi_tinh",
+        "ngay_sinh",
+        "sdt",
+        "email",
+        "dia_chi",
+        "ngay_tham_gia",
+        "trang_thai",
+    )
+
     list_display = (
         "ma_hv",
         "ho_ten",
@@ -36,15 +90,28 @@ class HoiVienAdmin(admin.ModelAdmin):
         "email",
         "tai_khoan__username",
     )
-    autocomplete_fields = ("tai_khoan",)
     list_select_related = ("tai_khoan",)
     ordering = ("ma_hv",)
     list_per_page = 25
 
+    def tao_ho_so_tu_doi_tuong(self, obj):
+        tao_hoi_vien_tu_doi_tuong(obj)
+
 
 @admin.register(LeTan)
-class LeTanAdmin(admin.ModelAdmin):
-    readonly_fields = ("ma_lt",)
+class LeTanAdmin(HoSoNguoiDungAdmin):
+    truong_ma = "ma_lt"
+    cac_truong_ho_so = (
+        "ho_ten",
+        "gioi_tinh",
+        "ngay_sinh",
+        "sdt",
+        "email",
+        "dia_chi",
+        "ngay_vao_lam",
+        "trang_thai",
+    )
+
     list_display = (
         "ma_lt",
         "ho_ten",
@@ -61,15 +128,28 @@ class LeTanAdmin(admin.ModelAdmin):
         "email",
         "tai_khoan__username",
     )
-    autocomplete_fields = ("tai_khoan",)
     list_select_related = ("tai_khoan",)
     ordering = ("ma_lt",)
     list_per_page = 25
 
+    def tao_ho_so_tu_doi_tuong(self, obj):
+        tao_le_tan_tu_doi_tuong(obj)
+
 
 @admin.register(HuanLuyenVien)
-class HuanLuyenVienAdmin(admin.ModelAdmin):
-    readonly_fields = ("ma_pt",)
+class HuanLuyenVienAdmin(HoSoNguoiDungAdmin):
+    truong_ma = "ma_pt"
+    cac_truong_ho_so = (
+        "ho_ten",
+        "gioi_tinh",
+        "ngay_sinh",
+        "sdt",
+        "email",
+        "dia_chi",
+        "ngay_vao_lam",
+        "trang_thai",
+    )
+
     list_display = (
         "ma_pt",
         "ho_ten",
@@ -86,10 +166,12 @@ class HuanLuyenVienAdmin(admin.ModelAdmin):
         "email",
         "tai_khoan__username",
     )
-    autocomplete_fields = ("tai_khoan",)
     list_select_related = ("tai_khoan",)
     ordering = ("ma_pt",)
     list_per_page = 25
+
+    def tao_ho_so_tu_doi_tuong(self, obj):
+        tao_huan_luyen_vien_tu_doi_tuong(obj)
 
 
 @admin.register(GoiTap)
