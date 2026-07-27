@@ -19,6 +19,7 @@ admin.site.index_title = "Trang quản trị hệ thống"
 
 @admin.register(HoiVien)
 class HoiVienAdmin(admin.ModelAdmin):
+    readonly_fields = ("ma_hv",)
     list_display = (
         "ma_hv",
         "ho_ten",
@@ -43,6 +44,7 @@ class HoiVienAdmin(admin.ModelAdmin):
 
 @admin.register(LeTan)
 class LeTanAdmin(admin.ModelAdmin):
+    readonly_fields = ("ma_lt",)
     list_display = (
         "ma_lt",
         "ho_ten",
@@ -67,6 +69,7 @@ class LeTanAdmin(admin.ModelAdmin):
 
 @admin.register(HuanLuyenVien)
 class HuanLuyenVienAdmin(admin.ModelAdmin):
+    readonly_fields = ("ma_pt",)
     list_display = (
         "ma_pt",
         "ho_ten",

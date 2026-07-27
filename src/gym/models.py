@@ -11,10 +11,12 @@ class GioiTinh(models.TextChoices):
     NU = "Nữ", "Nữ"
 
 
-class HoiVien(models.Model):
+class HoiVien(MaTuDongMixin, models.Model):
+    MA_PREFIX = "HV"
     ma_hv = models.CharField(
         max_length=10,
         primary_key=True,
+        editable=False,
         db_column="MaHV",
     )
 
@@ -73,10 +75,12 @@ class HoiVien(models.Model):
         return f"{self.ma_hv} - {self.ho_ten}"
 
 
-class LeTan(models.Model):
+class LeTan(MaTuDongMixin, models.Model):
+    MA_PREFIX = "LT"
     ma_lt = models.CharField(
         max_length=10,
         primary_key=True,
+        editable=False,
         db_column="MaLT",
     )
 
@@ -135,10 +139,12 @@ class LeTan(models.Model):
         return f"{self.ma_lt} - {self.ho_ten}"
 
 
-class HuanLuyenVien(models.Model):
+class HuanLuyenVien(MaTuDongMixin, models.Model):
+    MA_PREFIX = "PT"
     ma_pt = models.CharField(
         max_length=10,
         primary_key=True,
+        editable=False,
         db_column="MaPT",
     )
 
