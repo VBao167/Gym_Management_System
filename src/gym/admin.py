@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 
 from .models import (
@@ -15,6 +16,10 @@ from .services.nguoi_dung import (
     tao_hoi_vien_tu_doi_tuong,
     tao_huan_luyen_vien_tu_doi_tuong,
     tao_le_tan_tu_doi_tuong,
+)
+
+from .services.dang_ky_goi import (
+    tao_dang_ky_va_hoa_don_tu_doi_tuong,
 )
 
 
@@ -190,6 +195,32 @@ class GoiTapAdmin(admin.ModelAdmin):
     ordering = ("ma_goi",)
     list_per_page = 25
 
+class DangKyGoiTapTaoForm(forms.ModelForm):
+    le_tan_lap_hoa_don = forms.ModelChoiceField(
+        queryset=LeTan.objects.filter(trang_thai=True),
+        label="Lễ tân lập hóa đơn",
+    )
+
+    phuong_thuc_thanh_toan = forms.ChoiceField(
+        choices=HoaDon.PhuongThucThanhToan.choices,
+        label="Phương thức thanh toán",
+    )
+
+    ghi_chu_hoa_don = forms.CharField(
+        required=False,
+        max_length=255,
+        label="Ghi chú hóa đơn",
+    )
+
+    class Meta:
+        model = DangKyGoiTap
+        fields = (
+            "hoi_vien",
+            "goi_tap",
+            "ngay_dang_ky",
+            "ngay_bat_dau",
+            "ghi_chu",
+        )
 
 @admin.register(DangKyGoiTap)
 class DangKyGoiTapAdmin(admin.ModelAdmin):
@@ -222,6 +253,7 @@ class DangKyGoiTapAdmin(admin.ModelAdmin):
         "ngay_ket_thuc",
         "so_buoi_pt_dang_ky",
         "trang_thai",
+        "hien_thi_hoa_don",
         "hien_thi_so_buoi_da_dung",
         "hien_thi_so_buoi_da_len_lich",
         "hien_thi_so_buoi_con_lai",
@@ -255,6 +287,104 @@ class DangKyGoiTapAdmin(admin.ModelAdmin):
             return 0
         return obj.so_buoi_pt_co_the_xep_lich
 
+    def get_form(self, request, obj=None, **kwargs):
+        if obj is None:
+            kwargs["form"] = DangKyGoiTapTaoForm
+
+        return super().get_form(
+            request,
+            obj,
+            **kwargs,
+        )
+
+    def get_fields(self, request, obj=None):
+        fields = [
+            "ma_dk",
+            "hoi_vien",
+            "goi_tap",
+            "ngay_dang_ky",
+            "ngay_bat_dau",
+            "ngay_ket_thuc",
+            "so_buoi_pt_dang_ky",
+            "trang_thai",
+            "ghi_chu",
+        ]
+
+        if obj is None:
+            fields.extend(
+                [
+                    "le_tan_lap_hoa_don",
+                    "phuong_thuc_thanh_toan",
+                    "ghi_chu_hoa_don",
+                ]
+            )
+        else:
+            fields.append("hien_thi_hoa_don")
+
+        fields.extend(
+            [
+                "hien_thi_so_buoi_da_dung",
+                "hien_thi_so_buoi_da_len_lich",
+                "hien_thi_so_buoi_con_lai",
+                "hien_thi_so_buoi_co_the_xep",
+            ]
+        )
+
+        return tuple(fields)
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(
+            super().get_readonly_fields(request, obj)
+        )
+
+        if obj is not None:
+            fields.extend(
+                [
+                    "hoi_vien",
+                    "goi_tap",
+                    "ngay_dang_ky",
+                    "ngay_bat_dau",
+                ]
+            )
+
+        return tuple(fields)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            tao_dang_ky_va_hoa_don_tu_doi_tuong(
+                dang_ky=obj,
+                le_tan=form.cleaned_data[
+                    "le_tan_lap_hoa_don"
+                ],
+                phuong_thuc_thanh_toan=form.cleaned_data[
+                    "phuong_thuc_thanh_toan"
+                ],
+                ghi_chu_hoa_don=form.cleaned_data[
+                    "ghi_chu_hoa_don"
+                ],
+            )
+            return
+
+        super().save_model(
+            request,
+            obj,
+            form,
+            change,
+        )
+
+    @admin.display(description="Hóa đơn")
+    def hien_thi_hoa_don(self, obj):
+        if not obj or not obj.pk:
+            return "-"
+
+        try:
+            return obj.hoa_don
+        except HoaDon.DoesNotExist:
+            return "Không có hóa đơn — dữ liệu không hợp lệ"
+
 
 @admin.register(HoaDon)
 class HoaDonAdmin(admin.ModelAdmin):
@@ -280,10 +410,24 @@ class HoaDonAdmin(admin.ModelAdmin):
     )
     autocomplete_fields = ("dang_ky", "le_tan")
     list_select_related = ("dang_ky", "le_tan")
-    readonly_fields = ("ma_hd", "ngay_lap", "tong_tien")
+    readonly_fields = (
+        "ma_hd",
+        "dang_ky",
+        "le_tan",
+        "ngay_lap",
+        "tong_tien",
+        "phuong_thuc_thanh_toan",
+        "ghi_chu",
+    )
     date_hierarchy = "ngay_lap"
     ordering = ("-ngay_lap", "ma_hd")
     list_per_page = 25
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(BuoiTapPT)
