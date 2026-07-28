@@ -218,6 +218,7 @@ class DangKyGoiTapAdmin(admin.ModelAdmin):
     autocomplete_fields = ("hoi_vien", "goi_tap")
     list_select_related = ("hoi_vien", "goi_tap")
     readonly_fields = (
+        "ma_dk",
         "ngay_ket_thuc",
         "so_buoi_pt_dang_ky",
         "trang_thai",
@@ -279,7 +280,7 @@ class HoaDonAdmin(admin.ModelAdmin):
     )
     autocomplete_fields = ("dang_ky", "le_tan")
     list_select_related = ("dang_ky", "le_tan")
-    readonly_fields = ("ngay_lap", "tong_tien")
+    readonly_fields = ("ma_hd", "ngay_lap", "tong_tien")
     date_hierarchy = "ngay_lap"
     ordering = ("-ngay_lap", "ma_hd")
     list_per_page = 25
@@ -319,6 +320,7 @@ class BuoiTapPTAdmin(admin.ModelAdmin):
         "huan_luyen_vien",
         "le_tan",
     )
+    readonly_fields = ("ma_buoi",)
     date_hierarchy = "ngay_tap"
     ordering = ("-ngay_tap", "-gio_bat_dau", "ma_buoi")
     list_per_page = 25
@@ -345,7 +347,7 @@ class DiemDanhAdmin(admin.ModelAdmin):
     )
     autocomplete_fields = ("hoi_vien", "le_tan")
     list_select_related = ("hoi_vien", "le_tan")
-    readonly_fields = ("thoi_gian_diem_danh",)
+    readonly_fields = ("ma_dd", "thoi_gian_diem_danh",)
     date_hierarchy = "thoi_gian_diem_danh"
     ordering = ("-thoi_gian_diem_danh", "ma_dd")
     list_per_page = 25

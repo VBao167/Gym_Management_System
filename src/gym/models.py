@@ -273,7 +273,8 @@ class GoiTap(MaTuDongMixin, models.Model):
     def __str__(self):
         return f"{self.ma_goi} - {self.ten_goi}"
 
-class DangKyGoiTap(models.Model):
+class DangKyGoiTap(MaTuDongMixin, models.Model):
+    MA_PREFIX = "DK"
     class TrangThai(models.TextChoices):
         CHUA_KICH_HOAT = "ChuaKichHoat", "Chưa kích hoạt"
         HOAT_DONG = "HoatDong", "Hoạt động"
@@ -282,6 +283,7 @@ class DangKyGoiTap(models.Model):
     ma_dk = models.CharField(
         max_length=10,
         primary_key=True,
+        editable=False,
         db_column="MaDK",
     )
 
@@ -407,6 +409,7 @@ class DangKyGoiTap(models.Model):
             )
 
     def save(self, *args, **kwargs):
+        self.gan_ma_tu_dong()
         self.gan_du_lieu_tu_dong()
         self.full_clean()
         return super().save(*args, **kwargs)
@@ -442,7 +445,8 @@ class DangKyGoiTap(models.Model):
             0,
         )
 
-class HoaDon(models.Model):
+class HoaDon(MaTuDongMixin, models.Model):
+    MA_PREFIX = "HD"
     class PhuongThucThanhToan(models.TextChoices):
         TIEN_MAT = "TienMat", "Tiền mặt"
         CHUYEN_KHOAN = "ChuyenKhoan", "Chuyển khoản"
@@ -451,6 +455,7 @@ class HoaDon(models.Model):
     ma_hd = models.CharField(
         max_length=10,
         primary_key=True,
+        editable=False,
         db_column="MaHD",
     )
 
@@ -519,6 +524,7 @@ class HoaDon(models.Model):
             self.tong_tien = self.dang_ky.goi_tap.gia_tien
 
     def save(self, *args, **kwargs):
+        self.gan_ma_tu_dong()
         self.gan_tong_tien()
         self.full_clean()
         return super().save(*args, **kwargs)
@@ -526,7 +532,8 @@ class HoaDon(models.Model):
     def __str__(self):
         return f"{self.ma_hd} - {self.dang_ky.ma_dk}"
 
-class BuoiTapPT(models.Model):
+class BuoiTapPT(MaTuDongMixin, models.Model):
+    MA_PREFIX = "Buoi"
     class TrangThai(models.TextChoices):
         DA_LEN_LICH = "DaLenLich", "Đã lên lịch"
         HOAN_THANH = "HoanThanh", "Hoàn thành"
@@ -536,6 +543,7 @@ class BuoiTapPT(models.Model):
     ma_buoi = models.CharField(
         max_length=10,
         primary_key=True,
+        editable=False,
         db_column="MaBuoi",
     )
 
@@ -724,6 +732,7 @@ class BuoiTapPT(models.Model):
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
+        self.gan_ma_tu_dong()
         self.full_clean()
         return super().save(*args, **kwargs)
 
@@ -734,10 +743,12 @@ class BuoiTapPT(models.Model):
             f"{self.gio_bat_dau}"
         )
 
-class DiemDanh(models.Model):
+class DiemDanh(MaTuDongMixin, models.Model):
+    MA_PREFIX = "DD"
     ma_dd = models.CharField(
         max_length=10,
         primary_key=True,
+        editable=False,
         db_column="MaDD",
     )
 
@@ -812,6 +823,7 @@ class DiemDanh(models.Model):
             )
 
     def save(self, *args, **kwargs):
+        self.gan_ma_tu_dong()
         self.cap_nhat_trang_thai_dang_ky()
         self.full_clean()
         return super().save(*args, **kwargs)
