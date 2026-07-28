@@ -2,6 +2,10 @@ from django.db import transaction
 
 from gym.models import DangKyGoiTap, HoaDon
 
+from gym.services.trang_thai_hoi_vien import (
+    cap_nhat_trang_thai_hoi_vien,
+)
+
 
 def _tao_dang_ky_va_hoa_don(
     *,
@@ -17,6 +21,10 @@ def _tao_dang_ky_va_hoa_don(
         le_tan=le_tan,
         phuong_thuc_thanh_toan=phuong_thuc_thanh_toan,
         ghi_chu=ghi_chu_hoa_don,
+    )
+
+    cap_nhat_trang_thai_hoi_vien(
+        dang_ky.hoi_vien,
     )
 
     return dang_ky, hoa_don

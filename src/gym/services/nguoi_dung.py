@@ -30,13 +30,17 @@ def _tao_ho_so_va_tai_khoan(
     ho_so,
     ten_truong_ma,
     vai_tro,
+    trang_thai_tai_khoan=None,
 ):
     ho_so.gan_ma_tu_dong()
+
+    if trang_thai_tai_khoan is None:
+        trang_thai_tai_khoan = ho_so.trang_thai
 
     tai_khoan = _tao_tai_khoan(
         username=getattr(ho_so, ten_truong_ma),
         vai_tro=vai_tro,
-        trang_thai=ho_so.trang_thai,
+        trang_thai=trang_thai_tai_khoan,
     )
 
     ho_so.tai_khoan = tai_khoan
@@ -48,19 +52,26 @@ def _tao_ho_so_va_tai_khoan(
 
 @transaction.atomic
 def tao_hoi_vien(**du_lieu):
+    hoi_vien = HoiVien(**du_lieu)
+    hoi_vien.trang_thai = False
+
     return _tao_ho_so_va_tai_khoan(
-        ho_so=HoiVien(**du_lieu),
+        ho_so=hoi_vien,
         ten_truong_ma="ma_hv",
         vai_tro=TaiKhoan.VaiTro.HOI_VIEN,
+        trang_thai_tai_khoan=True,
     )
 
 
 @transaction.atomic
 def tao_hoi_vien_tu_doi_tuong(hoi_vien):
+    hoi_vien.trang_thai = False
+
     return _tao_ho_so_va_tai_khoan(
         ho_so=hoi_vien,
         ten_truong_ma="ma_hv",
         vai_tro=TaiKhoan.VaiTro.HOI_VIEN,
+        trang_thai_tai_khoan=True,
     )
 
 

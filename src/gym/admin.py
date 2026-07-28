@@ -30,6 +30,7 @@ admin.site.index_title = "Trang quản trị hệ thống"
 class HoSoNguoiDungAdmin(admin.ModelAdmin):
     truong_ma = ""
     cac_truong_ho_so = ()
+    khoa_tai_khoan_khi_ngung_hoat_dong = True
 
     def get_fields(self, request, obj=None):
         fields = [self.truong_ma]
@@ -55,9 +56,13 @@ class HoSoNguoiDungAdmin(admin.ModelAdmin):
 
         super().save_model(request, obj, form, change)
 
-        # Hồ sơ ngừng hoạt động thì khóa tài khoản ngay.
+        # Chỉ tự khóa tài khoản đối với hồ sơ nhân viên.
         # Hồ sơ hoạt động lại không tự mở tài khoản.
-        if not obj.trang_thai and obj.tai_khoan.is_active:
+        if (
+            self.khoa_tai_khoan_khi_ngung_hoat_dong
+            and not obj.trang_thai
+            and obj.tai_khoan.is_active
+        ):
             obj.tai_khoan.is_active = False
             obj.tai_khoan.save(update_fields=["is_active"])
 
@@ -68,6 +73,7 @@ class HoSoNguoiDungAdmin(admin.ModelAdmin):
 @admin.register(HoiVien)
 class HoiVienAdmin(HoSoNguoiDungAdmin):
     truong_ma = "ma_hv"
+    khoa_tai_khoan_khi_ngung_hoat_dong = False
     cac_truong_ho_so = (
         "ho_ten",
         "gioi_tinh",
@@ -101,6 +107,16 @@ class HoiVienAdmin(HoSoNguoiDungAdmin):
 
     def tao_ho_so_tu_doi_tuong(self, obj):
         tao_hoi_vien_tu_doi_tuong(obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(
+            super().get_readonly_fields(request, obj)
+        )
+
+        if "trang_thai" not in fields:
+            fields.append("trang_thai")
+
+        return tuple(fields)
 
 
 @admin.register(LeTan)

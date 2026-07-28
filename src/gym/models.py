@@ -782,25 +782,19 @@ class DiemDanh(MaTuDongMixin, models.Model):
         db_table = "DiemDanh"
         ordering = ("-thoi_gian_diem_danh", "ma_dd")
 
-    def cap_nhat_trang_thai_dang_ky(self):
+    def cap_nhat_trang_thai_truoc_diem_danh(self):
         if not self.hoi_vien_id:
             return
 
-        cac_dang_ky = DangKyGoiTap.objects.filter(
-            hoi_vien_id=self.hoi_vien_id,
+        # Import tại đây để tránh vòng lặp import:
+        # service này đang import các model của app gym.
+        from gym.services.trang_thai_hoi_vien import (
+            cap_nhat_trang_thai_hoi_vien,
         )
 
-        for dang_ky in cac_dang_ky:
-            trang_thai_cu = dang_ky.trang_thai
-
-            dang_ky.gan_du_lieu_tu_dong()
-
-            if dang_ky.trang_thai != trang_thai_cu:
-                DangKyGoiTap.objects.filter(
-                    pk=dang_ky.pk,
-                ).update(
-                    trang_thai=dang_ky.trang_thai,
-                )
+        cap_nhat_trang_thai_hoi_vien(
+            self.hoi_vien,
+        )
 
     def clean(self):
         super().clean()
@@ -808,9 +802,12 @@ class DiemDanh(MaTuDongMixin, models.Model):
         if not self.hoi_vien_id:
             return
 
+        hom_nay = timezone.localdate()
+
         co_goi_hoat_dong = DangKyGoiTap.objects.filter(
             hoi_vien_id=self.hoi_vien_id,
-            trang_thai=DangKyGoiTap.TrangThai.HOAT_DONG,
+            ngay_bat_dau__lte=hom_nay,
+            ngay_ket_thuc__gte=hom_nay,
         ).exists()
 
         if not co_goi_hoat_dong:
@@ -824,7 +821,7 @@ class DiemDanh(MaTuDongMixin, models.Model):
 
     def save(self, *args, **kwargs):
         self.gan_ma_tu_dong()
-        self.cap_nhat_trang_thai_dang_ky()
+        self.cap_nhat_trang_thai_truoc_diem_danh()
         self.full_clean()
         return super().save(*args, **kwargs)
 
