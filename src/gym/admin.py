@@ -22,6 +22,10 @@ from .services.dang_ky_goi import (
     tao_dang_ky_va_hoa_don_tu_doi_tuong,
 )
 
+from .services.diem_danh import (
+    tao_diem_danh_tu_doi_tuong,
+)
+
 
 admin.site.site_header = "Hệ thống Quản lý Phòng Gym"
 admin.site.site_title = "Gym Management"
@@ -486,6 +490,34 @@ class BuoiTapPTAdmin(admin.ModelAdmin):
     list_per_page = 25
 
 
+class DiemDanhTaoForm(forms.ModelForm):
+    class Meta:
+        model = DiemDanh
+        fields = (
+            "hoi_vien",
+            "le_tan",
+            "ghi_chu",
+        )
+
+    def clean_le_tan(self):
+        le_tan = self.cleaned_data.get("le_tan")
+
+        if le_tan is None:
+            return le_tan
+
+        if not le_tan.trang_thai:
+            raise forms.ValidationError(
+                "Lễ tân đã ngừng làm việc, "
+                "không thể thực hiện điểm danh."
+            )
+
+        if not le_tan.tai_khoan.is_active:
+            raise forms.ValidationError(
+                "Tài khoản Lễ tân đang bị khóa."
+            )
+
+        return le_tan
+
 @admin.register(DiemDanh)
 class DiemDanhAdmin(admin.ModelAdmin):
     list_display = (
@@ -505,9 +537,68 @@ class DiemDanhAdmin(admin.ModelAdmin):
         "le_tan__ma_lt",
         "le_tan__ho_ten",
     )
-    autocomplete_fields = ("hoi_vien", "le_tan")
-    list_select_related = ("hoi_vien", "le_tan")
-    readonly_fields = ("ma_dd", "thoi_gian_diem_danh",)
+    autocomplete_fields = (
+        "hoi_vien",
+        "le_tan",
+    )
+    list_select_related = (
+        "hoi_vien",
+        "le_tan",
+    )
     date_hierarchy = "thoi_gian_diem_danh"
-    ordering = ("-thoi_gian_diem_danh", "ma_dd")
+    ordering = (
+        "-thoi_gian_diem_danh",
+        "ma_dd",
+    )
     list_per_page = 25
+
+    def get_form(self, request, obj=None, **kwargs):
+        if obj is None:
+            kwargs["form"] = DiemDanhTaoForm
+
+        return super().get_form(
+            request,
+            obj,
+            **kwargs,
+        )
+
+    def get_fields(self, request, obj=None):
+        return (
+            "ma_dd",
+            "hoi_vien",
+            "le_tan",
+            "thoi_gian_diem_danh",
+            "ghi_chu",
+        )
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = [
+            "ma_dd",
+            "thoi_gian_diem_danh",
+        ]
+
+        if obj is not None:
+            fields.extend(
+                [
+                    "hoi_vien",
+                    "le_tan",
+                    "ghi_chu",
+                ]
+            )
+
+        return tuple(fields)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            tao_diem_danh_tu_doi_tuong(obj)
+            return
+
+        super().save_model(
+            request,
+            obj,
+            form,
+            change,
+        )
+
+    def has_delete_permission(self, request, obj=None):
+        return False

@@ -7,21 +7,9 @@ from gym.services.trang_thai_hoi_vien import (
 )
 
 
-@transaction.atomic
-def tao_diem_danh(
-    *,
-    hoi_vien,
-    le_tan,
-    ghi_chu="",
-):
-    """
-    Tạo một lần điểm danh cho Hội viên.
-
-    Hội viên phải có gói tập đang hiệu lực.
-    Lễ tân phải đang làm việc và có tài khoản hoạt động.
-    """
+def _tao_diem_danh(diem_danh):
     co_quyen_tap = cap_nhat_trang_thai_hoi_vien(
-        hoi_vien,
+        diem_danh.hoi_vien,
     )
 
     if not co_quyen_tap:
@@ -32,6 +20,8 @@ def tao_diem_danh(
                 )
             }
         )
+
+    le_tan = diem_danh.le_tan
 
     if not le_tan.trang_thai:
         raise ValidationError(
@@ -52,8 +42,26 @@ def tao_diem_danh(
             }
         )
 
-    return DiemDanh.objects.create(
-        hoi_vien=hoi_vien,
-        le_tan=le_tan,
-        ghi_chu=ghi_chu,
+    diem_danh.save()
+    return diem_danh
+
+
+@transaction.atomic
+def tao_diem_danh(
+    *,
+    hoi_vien,
+    le_tan,
+    ghi_chu="",
+):
+    return _tao_diem_danh(
+        DiemDanh(
+            hoi_vien=hoi_vien,
+            le_tan=le_tan,
+            ghi_chu=ghi_chu,
+        )
     )
+
+
+@transaction.atomic
+def tao_diem_danh_tu_doi_tuong(diem_danh):
+    return _tao_diem_danh(diem_danh)

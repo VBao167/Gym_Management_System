@@ -826,8 +826,15 @@ class DiemDanh(MaTuDongMixin, models.Model):
         return super().save(*args, **kwargs)
 
     def __str__(self):
+        if self.thoi_gian_diem_danh:
+            thoi_gian = timezone.localtime(
+                self.thoi_gian_diem_danh
+            ).strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            thoi_gian = "Chưa có thời gian"
+
         return (
             f"{self.ma_dd} - "
             f"{self.hoi_vien} - "
-            f"{self.thoi_gian_diem_danh}"
+            f"{thoi_gian}"
         )
