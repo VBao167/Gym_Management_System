@@ -53,13 +53,14 @@ def cap_nhat_trang_thai_hoi_vien(hoi_vien):
         ngay_ket_thuc__gte=hom_nay,
     ).exists()
 
-    if hoi_vien.trang_thai != co_goi_hoat_dong:
-        HoiVien.objects.filter(
-            pk=hoi_vien.pk,
-        ).update(
-            trang_thai=co_goi_hoat_dong,
-        )
+    HoiVien.objects.filter(
+        pk=hoi_vien.pk,
+    ).exclude(
+        trang_thai=co_goi_hoat_dong,
+    ).update(
+        trang_thai=co_goi_hoat_dong,
+    )
 
-        hoi_vien.trang_thai = co_goi_hoat_dong
+    hoi_vien.trang_thai = co_goi_hoat_dong
 
     return co_goi_hoat_dong

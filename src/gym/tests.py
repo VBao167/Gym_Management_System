@@ -1,3 +1,847 @@
-from django.test import TestCase
+from datetime import date, time, timedelta
 
-# Create your tests here.
+from django.core.exceptions import ValidationError
+from django.test import TestCase
+from django.utils import timezone
+
+from accounts.models import TaiKhoan
+from gym.models import (
+    BuoiTapPT,
+    DangKyGoiTap,
+    DiemDanh,
+    GoiTap,
+    HoaDon,
+    HoiVien,
+)
+from gym.services.buoi_tap_pt import (
+    tao_buoi_tap_pt,
+    tao_buoi_tap_pt_tu_doi_tuong,
+)
+from gym.services.dang_ky_goi import tao_dang_ky_va_hoa_don
+from gym.services.diem_danh import tao_diem_danh
+from gym.services.gia_han_goi import gia_han_goi
+from gym.services.nguoi_dung import (
+    tao_hoi_vien,
+    tao_huan_luyen_vien,
+    tao_le_tan,
+)
+from gym.services.trang_thai_hoi_vien import (
+    cap_nhat_trang_thai_hoi_vien,
+)
+
+
+class TaoNguoiDungServiceTests(TestCase):
+    def test_tao_hoi_vien_kem_tai_khoan(self):
+        hoi_vien = tao_hoi_vien(
+            ho_ten="Hội viên kiểm thử",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2000, 1, 1),
+            sdt="0901000001",
+            email="hoi.vien@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.assertRegex(hoi_vien.ma_hv, r"^HV\d+$")
+        self.assertFalse(hoi_vien.trang_thai)
+
+        tai_khoan = hoi_vien.tai_khoan
+
+        self.assertRegex(tai_khoan.ma_tk, r"^TK\d+$")
+        self.assertEqual(tai_khoan.username, hoi_vien.ma_hv)
+        self.assertEqual(
+            tai_khoan.vai_tro,
+            TaiKhoan.VaiTro.HOI_VIEN,
+        )
+        self.assertTrue(tai_khoan.is_active)
+        self.assertTrue(tai_khoan.check_password("1"))
+
+    def test_tao_le_tan_va_huan_luyen_vien(self):
+        le_tan = tao_le_tan(
+            ho_ten="Lễ tân kiểm thử",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 2, 2),
+            sdt="0901000002",
+            email="le.tan@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        huan_luyen_vien = tao_huan_luyen_vien(
+            ho_ten="PT kiểm thử",
+            gioi_tinh="Nam",
+            ngay_sinh=date(1999, 3, 3),
+            sdt="0901000003",
+            email="pt@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.assertRegex(le_tan.ma_lt, r"^LT\d+$")
+        self.assertEqual(
+            le_tan.tai_khoan.vai_tro,
+            TaiKhoan.VaiTro.LE_TAN,
+        )
+        self.assertTrue(le_tan.tai_khoan.is_active)
+        self.assertTrue(le_tan.tai_khoan.check_password("1"))
+
+        self.assertRegex(
+            huan_luyen_vien.ma_pt,
+            r"^PT\d+$",
+        )
+        self.assertEqual(
+            huan_luyen_vien.tai_khoan.vai_tro,
+            TaiKhoan.VaiTro.PT,
+        )
+        self.assertTrue(
+            huan_luyen_vien.tai_khoan.is_active
+        )
+        self.assertTrue(
+            huan_luyen_vien.tai_khoan.check_password("1")
+        )
+
+    def test_du_lieu_hoi_vien_loi_duoc_rollback(self):
+        with self.assertRaises(ValidationError):
+            tao_hoi_vien(
+                ho_ten="Hội viên lỗi",
+                gioi_tinh="Nam",
+                ngay_sinh=date(2000, 4, 4),
+                sdt="0901000004",
+                email="email-khong-hop-le",
+                dia_chi="TP.HCM",
+            )
+
+        self.assertEqual(HoiVien.objects.count(), 0)
+        self.assertEqual(TaiKhoan.objects.count(), 0)
+
+    def test_ma_ho_so_duoc_sinh_khac_nhau(self):
+        hoi_vien_1 = tao_hoi_vien(
+            ho_ten="Hội viên thứ nhất",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2000, 5, 5),
+            sdt="0901000005",
+            email="hoi.vien.1@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        hoi_vien_2 = tao_hoi_vien(
+            ho_ten="Hội viên thứ hai",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 6, 6),
+            sdt="0901000006",
+            email="hoi.vien.2@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.assertNotEqual(
+            hoi_vien_1.ma_hv,
+            hoi_vien_2.ma_hv,
+        )
+        self.assertNotEqual(
+            hoi_vien_1.tai_khoan_id,
+            hoi_vien_2.tai_khoan_id,
+        )
+
+class DangKyGoiVaHoaDonServiceTests(TestCase):
+    def setUp(self):
+        self.hom_nay = timezone.localdate()
+
+        self.hoi_vien = tao_hoi_vien(
+            ho_ten="Hội viên đăng ký gói",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2000, 1, 1),
+            sdt="0911000001",
+            email="dang.ky@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.le_tan = tao_le_tan(
+            ho_ten="Lễ tân lập hóa đơn",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 2, 2),
+            sdt="0911000002",
+            email="lap.hoa.don@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.goi_tap = GoiTap.objects.create(
+            ten_goi="Gói PT kiểm thử",
+            thoi_han_ngay=30,
+            gia_tien=500000,
+            co_pt=True,
+            so_buoi_pt=5,
+            mo_ta="Kiểm thử đăng ký và hóa đơn",
+            trang_thai=True,
+        )
+
+    def test_tao_dang_ky_va_hoa_don_thanh_cong(self):
+        dang_ky, hoa_don = tao_dang_ky_va_hoa_don(
+            hoi_vien=self.hoi_vien,
+            goi_tap=self.goi_tap,
+            le_tan=self.le_tan,
+            ngay_dang_ky=self.hom_nay,
+            ngay_bat_dau=self.hom_nay,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.TIEN_MAT
+            ),
+        )
+
+        self.assertRegex(dang_ky.ma_dk, r"^DK\d+$")
+        self.assertRegex(hoa_don.ma_hd, r"^HD\d+$")
+
+        self.assertEqual(
+            dang_ky.ngay_ket_thuc,
+            self.hom_nay + timedelta(days=29),
+        )
+        self.assertEqual(dang_ky.so_buoi_pt_dang_ky, 5)
+        self.assertEqual(
+            dang_ky.trang_thai,
+            DangKyGoiTap.TrangThai.HOAT_DONG,
+        )
+
+        self.assertEqual(hoa_don.dang_ky, dang_ky)
+        self.assertEqual(hoa_don.le_tan, self.le_tan)
+        self.assertEqual(
+            hoa_don.tong_tien,
+            self.goi_tap.gia_tien,
+        )
+
+        self.hoi_vien.refresh_from_db()
+        self.assertTrue(self.hoi_vien.trang_thai)
+
+    def test_gia_hoa_don_duoc_luu_theo_thoi_diem_dang_ky(self):
+        _, hoa_don = tao_dang_ky_va_hoa_don(
+            hoi_vien=self.hoi_vien,
+            goi_tap=self.goi_tap,
+            le_tan=self.le_tan,
+            ngay_dang_ky=self.hom_nay,
+            ngay_bat_dau=self.hom_nay,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.CHUYEN_KHOAN
+            ),
+        )
+
+        tong_tien_ban_dau = hoa_don.tong_tien
+
+        self.goi_tap.gia_tien = 750000
+        self.goi_tap.save()
+
+        hoa_don.refresh_from_db()
+
+        self.assertEqual(
+            hoa_don.tong_tien,
+            tong_tien_ban_dau,
+        )
+        self.assertNotEqual(
+            hoa_don.tong_tien,
+            self.goi_tap.gia_tien,
+        )
+
+    def test_hoa_don_loi_thi_dang_ky_duoc_rollback(self):
+        with self.assertRaises(ValidationError):
+            tao_dang_ky_va_hoa_don(
+                hoi_vien=self.hoi_vien,
+                goi_tap=self.goi_tap,
+                le_tan=self.le_tan,
+                ngay_dang_ky=self.hom_nay,
+                ngay_bat_dau=self.hom_nay,
+                phuong_thuc_thanh_toan="KhongHopLe",
+            )
+
+        self.assertEqual(DangKyGoiTap.objects.count(), 0)
+        self.assertEqual(HoaDon.objects.count(), 0)
+
+        self.hoi_vien.refresh_from_db()
+        self.assertFalse(self.hoi_vien.trang_thai)
+
+class GiaHanGoiServiceTests(TestCase):
+    def setUp(self):
+        self.hom_nay = timezone.localdate()
+
+        self.hoi_vien = tao_hoi_vien(
+            ho_ten="Hội viên gia hạn",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2000, 1, 1),
+            sdt="0921000001",
+            email="gia.han@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.le_tan = tao_le_tan(
+            ho_ten="Lễ tân gia hạn",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 2, 2),
+            sdt="0921000002",
+            email="le.tan.gia.han@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.goi_tap = GoiTap.objects.create(
+            ten_goi="Gói gia hạn kiểm thử",
+            thoi_han_ngay=10,
+            gia_tien=300000,
+            co_pt=False,
+            so_buoi_pt=0,
+            mo_ta="Kiểm thử gia hạn",
+            trang_thai=True,
+        )
+
+    def test_chua_co_goi_thi_bat_dau_tu_ngay_dang_ky(self):
+        dang_ky, hoa_don = gia_han_goi(
+            hoi_vien=self.hoi_vien,
+            goi_tap=self.goi_tap,
+            le_tan=self.le_tan,
+            ngay_dang_ky=self.hom_nay,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.TIEN_MAT
+            ),
+        )
+
+        self.assertEqual(
+            dang_ky.ngay_bat_dau,
+            self.hom_nay,
+        )
+        self.assertEqual(
+            dang_ky.ngay_ket_thuc,
+            self.hom_nay + timedelta(days=9),
+        )
+        self.assertEqual(hoa_don.dang_ky, dang_ky)
+
+    def test_goi_moi_noi_tiep_sau_goi_hien_tai(self):
+        dang_ky_hien_tai, _ = tao_dang_ky_va_hoa_don(
+            hoi_vien=self.hoi_vien,
+            goi_tap=self.goi_tap,
+            le_tan=self.le_tan,
+            ngay_dang_ky=self.hom_nay,
+            ngay_bat_dau=self.hom_nay,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.TIEN_MAT
+            ),
+        )
+
+        dang_ky_gia_han, _ = gia_han_goi(
+            hoi_vien=self.hoi_vien,
+            goi_tap=self.goi_tap,
+            le_tan=self.le_tan,
+            ngay_dang_ky=self.hom_nay,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.CHUYEN_KHOAN
+            ),
+        )
+
+        self.assertEqual(
+            dang_ky_gia_han.ngay_bat_dau,
+            dang_ky_hien_tai.ngay_ket_thuc
+            + timedelta(days=1),
+        )
+        self.assertEqual(
+            dang_ky_hien_tai.trang_thai,
+            DangKyGoiTap.TrangThai.HOAT_DONG,
+        )
+        self.assertEqual(
+            dang_ky_gia_han.trang_thai,
+            DangKyGoiTap.TrangThai.CHUA_KICH_HOAT,
+        )
+
+    def test_goi_cu_da_het_thi_mua_lai_tu_hom_nay(self):
+        ngay_bat_dau_cu = self.hom_nay - timedelta(days=20)
+
+        dang_ky_cu, _ = tao_dang_ky_va_hoa_don(
+            hoi_vien=self.hoi_vien,
+            goi_tap=self.goi_tap,
+            le_tan=self.le_tan,
+            ngay_dang_ky=ngay_bat_dau_cu,
+            ngay_bat_dau=ngay_bat_dau_cu,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.TIEN_MAT
+            ),
+        )
+
+        dang_ky_moi, _ = gia_han_goi(
+            hoi_vien=self.hoi_vien,
+            goi_tap=self.goi_tap,
+            le_tan=self.le_tan,
+            ngay_dang_ky=self.hom_nay,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.TIEN_MAT
+            ),
+        )
+
+        self.assertLess(
+            dang_ky_cu.ngay_ket_thuc,
+            self.hom_nay,
+        )
+        self.assertEqual(
+            dang_ky_moi.ngay_bat_dau,
+            self.hom_nay,
+        )
+
+        self.hoi_vien.refresh_from_db()
+        self.assertTrue(self.hoi_vien.trang_thai)
+
+class TrangThaiVaDiemDanhServiceTests(TestCase):
+    def setUp(self):
+        self.hom_nay = timezone.localdate()
+
+        self.hoi_vien = tao_hoi_vien(
+            ho_ten="Hội viên điểm danh",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2000, 1, 1),
+            sdt="0931000001",
+            email="diem.danh@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.le_tan = tao_le_tan(
+            ho_ten="Lễ tân điểm danh",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 2, 2),
+            sdt="0931000002",
+            email="le.tan.diem.danh@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.goi_tap = GoiTap.objects.create(
+            ten_goi="Gói điểm danh kiểm thử",
+            thoi_han_ngay=10,
+            gia_tien=300000,
+            co_pt=False,
+            so_buoi_pt=0,
+            mo_ta="Kiểm thử trạng thái và điểm danh",
+            trang_thai=True,
+        )
+
+    def tao_dang_ky(self, ngay_bat_dau):
+        dang_ky, _ = tao_dang_ky_va_hoa_don(
+            hoi_vien=self.hoi_vien,
+            goi_tap=self.goi_tap,
+            le_tan=self.le_tan,
+            ngay_dang_ky=ngay_bat_dau,
+            ngay_bat_dau=ngay_bat_dau,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.TIEN_MAT
+            ),
+        )
+
+        return dang_ky
+
+    def test_dong_bo_goi_dang_hieu_luc(self):
+        dang_ky = self.tao_dang_ky(self.hom_nay)
+
+        DangKyGoiTap.objects.filter(
+            pk=dang_ky.pk,
+        ).update(
+            trang_thai=DangKyGoiTap.TrangThai.HET_HAN,
+        )
+
+        HoiVien.objects.filter(
+            pk=self.hoi_vien.pk,
+        ).update(
+            trang_thai=False,
+        )
+
+        ket_qua = cap_nhat_trang_thai_hoi_vien(
+            self.hoi_vien,
+        )
+
+        dang_ky.refresh_from_db()
+        self.hoi_vien.refresh_from_db()
+
+        self.assertTrue(ket_qua)
+        self.assertEqual(
+            dang_ky.trang_thai,
+            DangKyGoiTap.TrangThai.HOAT_DONG,
+        )
+        self.assertTrue(self.hoi_vien.trang_thai)
+        self.assertTrue(
+            self.hoi_vien.tai_khoan.is_active
+        )
+
+    def test_dong_bo_goi_het_han_khong_khoa_tai_khoan(self):
+        ngay_bat_dau = self.hom_nay - timedelta(days=20)
+        dang_ky = self.tao_dang_ky(ngay_bat_dau)
+
+        DangKyGoiTap.objects.filter(
+            pk=dang_ky.pk,
+        ).update(
+            trang_thai=DangKyGoiTap.TrangThai.HOAT_DONG,
+        )
+
+        HoiVien.objects.filter(
+            pk=self.hoi_vien.pk,
+        ).update(
+            trang_thai=True,
+        )
+
+        ket_qua = cap_nhat_trang_thai_hoi_vien(
+            self.hoi_vien,
+        )
+
+        dang_ky.refresh_from_db()
+        self.hoi_vien.refresh_from_db()
+
+        self.assertFalse(ket_qua)
+        self.assertEqual(
+            dang_ky.trang_thai,
+            DangKyGoiTap.TrangThai.HET_HAN,
+        )
+        self.assertFalse(self.hoi_vien.trang_thai)
+        self.assertTrue(
+            self.hoi_vien.tai_khoan.is_active
+        )
+
+    def test_hoi_vien_con_han_duoc_diem_danh(self):
+        self.tao_dang_ky(self.hom_nay)
+
+        diem_danh = tao_diem_danh(
+            hoi_vien=self.hoi_vien,
+            le_tan=self.le_tan,
+            ghi_chu="Điểm danh hợp lệ",
+        )
+
+        self.assertRegex(diem_danh.ma_dd, r"^DD\d+$")
+        self.assertEqual(
+            diem_danh.hoi_vien,
+            self.hoi_vien,
+        )
+        self.assertEqual(
+            diem_danh.le_tan,
+            self.le_tan,
+        )
+        self.assertEqual(DiemDanh.objects.count(), 1)
+
+    def test_hoi_vien_het_han_bi_chan_diem_danh(self):
+        ngay_bat_dau = self.hom_nay - timedelta(days=20)
+        self.tao_dang_ky(ngay_bat_dau)
+
+        with self.assertRaises(ValidationError):
+            tao_diem_danh(
+                hoi_vien=self.hoi_vien,
+                le_tan=self.le_tan,
+            )
+
+        self.hoi_vien.refresh_from_db()
+
+        self.assertEqual(DiemDanh.objects.count(), 0)
+        self.assertFalse(self.hoi_vien.trang_thai)
+        self.assertTrue(
+            self.hoi_vien.tai_khoan.is_active
+        )
+
+    def test_tai_khoan_le_tan_bi_khoa_thi_khong_diem_danh(self):
+        self.tao_dang_ky(self.hom_nay)
+
+        self.le_tan.tai_khoan.is_active = False
+        self.le_tan.tai_khoan.save(
+            update_fields=["is_active"],
+        )
+
+        with self.assertRaises(ValidationError):
+            tao_diem_danh(
+                hoi_vien=self.hoi_vien,
+                le_tan=self.le_tan,
+            )
+
+        self.assertEqual(DiemDanh.objects.count(), 0)
+
+class BuoiTapPTServiceTests(TestCase):
+    def setUp(self):
+        self.hom_nay = timezone.localdate()
+
+        self.le_tan = tao_le_tan(
+            ho_ten="Lễ tân xếp lịch PT",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 1, 1),
+            sdt="0941000001",
+            email="le.tan.pt@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.pt_1 = tao_huan_luyen_vien(
+            ho_ten="PT thứ nhất",
+            gioi_tinh="Nam",
+            ngay_sinh=date(1998, 2, 2),
+            sdt="0941000002",
+            email="pt.1@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.pt_2 = tao_huan_luyen_vien(
+            ho_ten="PT thứ hai",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(1999, 3, 3),
+            sdt="0941000003",
+            email="pt.2@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.hoi_vien_1 = tao_hoi_vien(
+            ho_ten="Hội viên dùng PT sớm",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2000, 4, 4),
+            sdt="0941000004",
+            email="hoi.vien.pt.1@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.hoi_vien_2 = tao_hoi_vien(
+            ho_ten="Hội viên PT thứ hai",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 5, 5),
+            sdt="0941000005",
+            email="hoi.vien.pt.2@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.goi_vao_gym = GoiTap.objects.create(
+            ten_goi="Gói vào gym kiểm thử",
+            thoi_han_ngay=30,
+            gia_tien=300000,
+            co_pt=False,
+            so_buoi_pt=0,
+            mo_ta="Gói bảo đảm quyền vào gym",
+            trang_thai=True,
+        )
+
+        self.goi_pt = GoiTap.objects.create(
+            ten_goi="Gói PT kiểm thử",
+            thoi_han_ngay=10,
+            gia_tien=500000,
+            co_pt=True,
+            so_buoi_pt=2,
+            mo_ta="Gói có hai buổi PT",
+            trang_thai=True,
+        )
+
+        dang_ky_vao_gym, _ = tao_dang_ky_va_hoa_don(
+            hoi_vien=self.hoi_vien_1,
+            goi_tap=self.goi_vao_gym,
+            le_tan=self.le_tan,
+            ngay_dang_ky=self.hom_nay,
+            ngay_bat_dau=self.hom_nay,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.TIEN_MAT
+            ),
+        )
+
+        self.dang_ky_pt_tuong_lai, _ = (
+            tao_dang_ky_va_hoa_don(
+                hoi_vien=self.hoi_vien_1,
+                goi_tap=self.goi_pt,
+                le_tan=self.le_tan,
+                ngay_dang_ky=self.hom_nay,
+                ngay_bat_dau=(
+                    dang_ky_vao_gym.ngay_ket_thuc
+                    + timedelta(days=1)
+                ),
+                phuong_thuc_thanh_toan=(
+                    HoaDon.PhuongThucThanhToan.TIEN_MAT
+                ),
+            )
+        )
+
+        self.dang_ky_pt_hien_tai, _ = (
+            tao_dang_ky_va_hoa_don(
+                hoi_vien=self.hoi_vien_2,
+                goi_tap=self.goi_pt,
+                le_tan=self.le_tan,
+                ngay_dang_ky=self.hom_nay,
+                ngay_bat_dau=self.hom_nay,
+                phuong_thuc_thanh_toan=(
+                    HoaDon.PhuongThucThanhToan.TIEN_MAT
+                ),
+            )
+        )
+
+    def assert_loi_truong(self, truong, ham):
+        with self.assertRaises(ValidationError) as context:
+            ham()
+
+        self.assertIn(
+            truong,
+            context.exception.message_dict,
+        )
+
+    def test_duoc_dung_som_buoi_pt_khi_co_quyen_vao_gym(self):
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(8, 0),
+            gio_ket_thuc=time(9, 0),
+        )
+
+        self.assertRegex(buoi_tap.ma_buoi, r"^Buoi\d+$")
+        self.assertEqual(
+            buoi_tap.trang_thai,
+            BuoiTapPT.TrangThai.DA_LEN_LICH,
+        )
+        self.assertEqual(
+            self.dang_ky_pt_tuong_lai.trang_thai,
+            DangKyGoiTap.TrangThai.CHUA_KICH_HOAT,
+        )
+
+    def test_chan_trung_lich_hoi_vien(self):
+        tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(8, 0),
+            gio_ket_thuc=time(9, 0),
+        )
+
+        self.assert_loi_truong(
+            "dang_ky",
+            lambda: tao_buoi_tap_pt(
+                dang_ky=self.dang_ky_pt_tuong_lai,
+                huan_luyen_vien=self.pt_2,
+                le_tan=self.le_tan,
+                ngay_tap=self.hom_nay,
+                gio_bat_dau=time(8, 30),
+                gio_ket_thuc=time(9, 30),
+            ),
+        )
+
+    def test_chan_trung_lich_huan_luyen_vien(self):
+        tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(8, 0),
+            gio_ket_thuc=time(9, 0),
+        )
+
+        self.assert_loi_truong(
+            "huan_luyen_vien",
+            lambda: tao_buoi_tap_pt(
+                dang_ky=self.dang_ky_pt_hien_tai,
+                huan_luyen_vien=self.pt_1,
+                le_tan=self.le_tan,
+                ngay_tap=self.hom_nay,
+                gio_bat_dau=time(8, 30),
+                gio_ket_thuc=time(9, 30),
+            ),
+        )
+
+    def test_chan_vuot_so_buoi_pt(self):
+        tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(8, 0),
+            gio_ket_thuc=time(9, 0),
+        )
+
+        tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        self.assert_loi_truong(
+            "dang_ky",
+            lambda: tao_buoi_tap_pt(
+                dang_ky=self.dang_ky_pt_tuong_lai,
+                huan_luyen_vien=self.pt_1,
+                le_tan=self.le_tan,
+                ngay_tap=self.hom_nay,
+                gio_bat_dau=time(10, 0),
+                gio_ket_thuc=time(11, 0),
+            ),
+        )
+
+        self.assertEqual(BuoiTapPT.objects.count(), 2)
+
+    def test_chan_pt_nghi_viec_hoac_bi_khoa(self):
+        self.pt_2.trang_thai = False
+        self.pt_2.save(update_fields=["trang_thai"])
+
+        self.assert_loi_truong(
+            "huan_luyen_vien",
+            lambda: tao_buoi_tap_pt(
+                dang_ky=self.dang_ky_pt_hien_tai,
+                huan_luyen_vien=self.pt_2,
+                le_tan=self.le_tan,
+                ngay_tap=self.hom_nay,
+                gio_bat_dau=time(10, 0),
+                gio_ket_thuc=time(11, 0),
+            ),
+        )
+
+        self.pt_2.trang_thai = True
+        self.pt_2.save(update_fields=["trang_thai"])
+        self.pt_2.tai_khoan.is_active = False
+        self.pt_2.tai_khoan.save(
+            update_fields=["is_active"],
+        )
+
+        self.assert_loi_truong(
+            "huan_luyen_vien",
+            lambda: tao_buoi_tap_pt(
+                dang_ky=self.dang_ky_pt_hien_tai,
+                huan_luyen_vien=self.pt_2,
+                le_tan=self.le_tan,
+                ngay_tap=self.hom_nay,
+                gio_bat_dau=time(10, 0),
+                gio_ket_thuc=time(11, 0),
+            ),
+        )
+
+    def test_chan_le_tan_nghi_viec_hoac_bi_khoa(self):
+        self.le_tan.trang_thai = False
+        self.le_tan.save(update_fields=["trang_thai"])
+
+        self.assert_loi_truong(
+            "le_tan",
+            lambda: tao_buoi_tap_pt(
+                dang_ky=self.dang_ky_pt_hien_tai,
+                huan_luyen_vien=self.pt_1,
+                le_tan=self.le_tan,
+                ngay_tap=self.hom_nay,
+                gio_bat_dau=time(10, 0),
+                gio_ket_thuc=time(11, 0),
+            ),
+        )
+
+        self.le_tan.trang_thai = True
+        self.le_tan.save(update_fields=["trang_thai"])
+        self.le_tan.tai_khoan.is_active = False
+        self.le_tan.tai_khoan.save(
+            update_fields=["is_active"],
+        )
+
+        self.assert_loi_truong(
+            "le_tan",
+            lambda: tao_buoi_tap_pt(
+                dang_ky=self.dang_ky_pt_hien_tai,
+                huan_luyen_vien=self.pt_1,
+                le_tan=self.le_tan,
+                ngay_tap=self.hom_nay,
+                gio_bat_dau=time(10, 0),
+                gio_ket_thuc=time(11, 0),
+            ),
+        )
+
+    def test_buoi_moi_bat_buoc_la_da_len_lich(self):
+        buoi_tap = BuoiTapPT(
+            dang_ky=self.dang_ky_pt_hien_tai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(11, 0),
+            gio_ket_thuc=time(12, 0),
+            trang_thai=BuoiTapPT.TrangThai.HOAN_THANH,
+        )
+
+        self.assert_loi_truong(
+            "trang_thai",
+            lambda: tao_buoi_tap_pt_tu_doi_tuong(
+                buoi_tap
+            ),
+        )
+
+        self.assertEqual(BuoiTapPT.objects.count(), 0)
