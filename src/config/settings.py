@@ -60,7 +60,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        "DIRS": [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -116,3 +116,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = "accounts.TaiKhoan"
+
+LOGIN_URL = "accounts:dang_nhap"
+LOGIN_REDIRECT_URL = "accounts:trang_chu"
+LOGOUT_REDIRECT_URL = "accounts:dang_nhap"
