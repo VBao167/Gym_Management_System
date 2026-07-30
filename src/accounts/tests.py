@@ -118,19 +118,29 @@ class XacThucTaiKhoanTests(TestCase):
         self.assertRedirects(
             response,
             reverse("accounts:trang_chu"),
+            fetch_redirect_response=False,
         )
 
         response = self.client.get(
             reverse("accounts:trang_chu")
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(
+        self.assertRedirects(
             response,
-            "tai_khoan_hoat_dong",
+            reverse("gym:trang_hoi_vien"),
         )
         self.assertTrue(
             response.wsgi_request.user.is_authenticated
+        )
+
+        response = self.client.get(
+            reverse("gym:trang_hoi_vien")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "Khu vực Hội viên.",
         )
 
     def test_sai_mat_khau_khong_dang_nhap(self):
@@ -181,6 +191,7 @@ class XacThucTaiKhoanTests(TestCase):
         self.assertRedirects(
             response,
             reverse("accounts:trang_chu"),
+            fetch_redirect_response=False,
         )
 
     def test_get_khong_the_dung_de_dang_xuat(self):
@@ -198,7 +209,10 @@ class XacThucTaiKhoanTests(TestCase):
             reverse("accounts:trang_chu")
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(
+            response,
+            reverse("gym:trang_hoi_vien"),
+        )
         self.assertTrue(
             response.wsgi_request.user.is_authenticated
         )
