@@ -972,3 +972,38 @@ class PhanQuyenVaiTroTests(TestCase):
                         response.status_code,
                         403,
                     )
+
+    def test_moi_khu_vuc_su_dung_dung_template(self):
+        template_theo_vai_tro = {
+            TaiKhoan.VaiTro.ADMIN:
+                "users/quan_tri.html",
+            TaiKhoan.VaiTro.LE_TAN:
+                "users/le_tan.html",
+            TaiKhoan.VaiTro.PT:
+                "users/pt.html",
+            TaiKhoan.VaiTro.HOI_VIEN:
+                "users/hoi_vien.html",
+        }
+
+        for vai_tro, tai_khoan in (
+            self.tai_khoan_theo_vai_tro.items()
+        ):
+            with self.subTest(vai_tro=vai_tro):
+                self.client.force_login(tai_khoan)
+
+                ten_url, _ = self.khu_vuc_theo_vai_tro[
+                    vai_tro
+                ]
+
+                response = self.client.get(
+                    reverse(ten_url)
+                )
+
+                self.assertTemplateUsed(
+                    response,
+                    template_theo_vai_tro[vai_tro],
+                )
+                self.assertTemplateUsed(
+                    response,
+                    "base.html",
+                )

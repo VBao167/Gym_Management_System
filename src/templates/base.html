@@ -1,0 +1,30 @@
+{% load static %}
+
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %} Hệ thống quản lý phòng Gym {% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
+    <header>
+      <h1>Hệ thống quản lý phòng Gym</h1>
+
+      {% if request.user.is_authenticated %}
+      <div>
+        <span> Tài khoản: {{ request.user.username }} </span>
+
+        <form method="post" action="{% url 'accounts:dang_xuat' %}">
+          {% csrf_token %}
+          <button type="submit">Đăng xuất</button>
+        </form>
+      </div>
+      {% endif %}
+    </header>
+
+    <main>{% block content %} {% endblock %}</main>
+  </body>
+</html>
