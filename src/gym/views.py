@@ -1,7 +1,9 @@
 from django.shortcuts import render
+from django.utils import timezone
 
 from accounts.decorators import vai_tro_required
 from accounts.models import TaiKhoan
+from gym.models import DiemDanh, GoiTap, HoiVien
 from gym.services.trang_thai_hoi_vien import (
     cap_nhat_trang_thai_toan_bo,
 )
@@ -11,9 +13,25 @@ from gym.services.trang_thai_hoi_vien import (
 def trang_quan_tri(request):
     cap_nhat_trang_thai_toan_bo()
 
+    hom_nay = timezone.localdate()
+
+    context = {
+        "tong_hoi_vien": HoiVien.objects.count(),
+        "hoi_vien_dang_hoat_dong": HoiVien.objects.filter(
+            trang_thai=True,
+        ).count(),
+        "goi_tap_dang_kinh_doanh": GoiTap.objects.filter(
+            trang_thai=True,
+        ).count(),
+        "diem_danh_hom_nay": DiemDanh.objects.filter(
+            thoi_gian_diem_danh__date=hom_nay,
+        ).count(),
+    }
+
     return render(
         request,
         "users/quan_tri.html",
+        context,
     )
 
 

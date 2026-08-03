@@ -1,7 +1,29 @@
 {% extends "base.html" %} {% block title %} Quản trị | Hệ thống quản lý phòng
 Gym {% endblock %} {% block content %}
 <section>
-  <h2>Khu vực Quản trị viên.</h2>
+  <h2>Tổng quan hệ thống</h2>
   <p>Chào mừng {{ request.user.username }}.</p>
+
+  <div class="dashboard-grid">
+    <article class="dashboard-card">
+      <h3>Tổng hội viên</h3>
+      <p class="dashboard-value">{{ tong_hoi_vien }}</p>
+    </article>
+
+    <article class="dashboard-card">
+      <h3>Hội viên đang hoạt động</h3>
+      <p class="dashboard-value">{{ hoi_vien_dang_hoat_dong }}</p>
+    </article>
+
+    <article class="dashboard-card">
+      <h3>Gói tập đang kinh doanh</h3>
+      <p class="dashboard-value">{{ goi_tap_dang_kinh_doanh }}</p>
+    </article>
+
+    <article class="dashboard-card">
+      <h3>Điểm danh hôm nay</h3>
+      <p class="dashboard-value">{{ diem_danh_hom_nay }}</p>
+    </article>
+  </div>
 </section>
 {% endblock %}
