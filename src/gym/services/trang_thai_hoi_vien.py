@@ -64,3 +64,18 @@ def cap_nhat_trang_thai_hoi_vien(hoi_vien):
     hoi_vien.trang_thai = co_goi_hoat_dong
 
     return co_goi_hoat_dong
+
+@transaction.atomic
+def cap_nhat_trang_thai_toan_bo():
+    """
+    Đồng bộ trạng thái đăng ký và trạng thái của toàn bộ Hội viên
+    theo ngày hiện tại.
+
+    Hàm không khóa hoặc mở khóa tài khoản Hội viên.
+    """
+    cac_hoi_vien = list(HoiVien.objects.all())
+
+    for hoi_vien in cac_hoi_vien:
+        cap_nhat_trang_thai_hoi_vien(hoi_vien)
+
+    return len(cac_hoi_vien)
