@@ -1732,3 +1732,142 @@ class ChinhSuaHoiVienTests(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 403)
+
+class TrangThaiTaiKhoanHoiVienTests(TestCase):
+    def setUp(self):
+        self.admin = TaiKhoan.objects.create_user(
+            username="admin_trang_thai_tai_khoan",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.ADMIN,
+        )
+
+        self.le_tan = TaiKhoan.objects.create_user(
+            username="le_tan_khong_duoc_khoa_tai_khoan",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.LE_TAN,
+        )
+
+        self.hoi_vien = tao_hoi_vien(
+            ho_ten="Hội viên kiểm thử tài khoản",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2002, 1, 1),
+            sdt="0971000001",
+            email="tai.khoan.hoi.vien@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.url = reverse(
+            "gym:doi_trang_thai_tai_khoan_hoi_vien",
+            args=[self.hoi_vien.ma_hv],
+        )
+
+    def test_admin_khoa_tai_khoan_hoi_vien(self):
+        self.client.force_login(self.admin)
+
+        trang_thai_hoi_vien_ban_dau = (
+            self.hoi_vien.trang_thai
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "hanh_dong": "khoa",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "gym:chi_tiet_hoi_vien",
+                args=[self.hoi_vien.ma_hv],
+            ),
+        )
+
+        self.hoi_vien.refresh_from_db()
+        self.hoi_vien.tai_khoan.refresh_from_db()
+
+        self.assertFalse(
+            self.hoi_vien.tai_khoan.is_active
+        )
+        self.assertEqual(
+            self.hoi_vien.trang_thai,
+            trang_thai_hoi_vien_ban_dau,
+        )
+
+    def test_admin_mo_khoa_tai_khoan_hoi_vien(self):
+        self.hoi_vien.tai_khoan.is_active = False
+        self.hoi_vien.tai_khoan.save(
+            update_fields=["is_active"],
+        )
+
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            self.url,
+            {
+                "hanh_dong": "mo_khoa",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "gym:chi_tiet_hoi_vien",
+                args=[self.hoi_vien.ma_hv],
+            ),
+        )
+
+        self.hoi_vien.tai_khoan.refresh_from_db()
+
+        self.assertTrue(
+            self.hoi_vien.tai_khoan.is_active
+        )
+
+    def test_hanh_dong_khong_hop_le_bi_tu_choi(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            self.url,
+            {
+                "hanh_dong": "xoa",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+        self.hoi_vien.tai_khoan.refresh_from_db()
+
+        self.assertTrue(
+            self.hoi_vien.tai_khoan.is_active
+        )
+
+    def test_get_khong_duoc_dung_de_thay_doi_trang_thai(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 405)
+
+        self.hoi_vien.tai_khoan.refresh_from_db()
+
+        self.assertTrue(
+            self.hoi_vien.tai_khoan.is_active
+        )
+
+    def test_tai_khoan_khong_phai_admin_bi_tu_choi(self):
+        self.client.force_login(self.le_tan)
+
+        response = self.client.post(
+            self.url,
+            {
+                "hanh_dong": "khoa",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+        self.hoi_vien.tai_khoan.refresh_from_db()
+
+        self.assertTrue(
+            self.hoi_vien.tai_khoan.is_active
+        )

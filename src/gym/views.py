@@ -1,5 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.http import HttpResponseBadRequest
+from django.views.decorators.http import require_POST
 
 from accounts.decorators import vai_tro_required
 from accounts.models import TaiKhoan
@@ -123,6 +125,39 @@ def chinh_sua_hoi_vien(request, ma_hv):
             "nhan_nut_luu": "Lưu thay đổi",
             "hoi_vien": hoi_vien,
         },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+@require_POST
+def doi_trang_thai_tai_khoan_hoi_vien(request, ma_hv):
+    hoi_vien = get_object_or_404(
+        HoiVien.objects.select_related("tai_khoan"),
+        pk=ma_hv,
+    )
+
+    hanh_dong = request.POST.get("hanh_dong")
+
+    if hanh_dong == "khoa":
+        trang_thai_moi = False
+    elif hanh_dong == "mo_khoa":
+        trang_thai_moi = True
+    else:
+        return HttpResponseBadRequest(
+            "Hành động thay đổi trạng thái không hợp lệ."
+        )
+
+    tai_khoan = hoi_vien.tai_khoan
+
+    if tai_khoan.is_active != trang_thai_moi:
+        tai_khoan.is_active = trang_thai_moi
+        tai_khoan.save(
+            update_fields=["is_active"],
+        )
+
+    return redirect(
+        "gym:chi_tiet_hoi_vien",
+        ma_hv=hoi_vien.ma_hv,
     )
 
 

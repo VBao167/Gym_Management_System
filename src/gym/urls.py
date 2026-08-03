@@ -27,6 +27,11 @@ urlpatterns = [
         name="chinh_sua_hoi_vien",
         ),
     path(
+    "quan-tri/hoi-vien/<str:ma_hv>/doi-trang-thai-tai-khoan/",
+    views.doi_trang_thai_tai_khoan_hoi_vien,
+    name="doi_trang_thai_tai_khoan_hoi_vien",
+    ),
+    path(
     "quan-tri/hoi-vien/<str:ma_hv>/",
     views.chi_tiet_hoi_vien,
     name="chi_tiet_hoi_vien",

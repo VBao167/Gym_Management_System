@@ -97,9 +97,30 @@
     </div>
 
     <div class="detail-card">
-      <div class="detail-card-heading">
+      <div class="detail-card-heading detail-card-heading-actions">
         <h3>Thông tin tài khoản</h3>
-      </div>
+
+        <form
+            method="post"
+            action="{% url 'gym:doi_trang_thai_tai_khoan_hoi_vien' hoi_vien.ma_hv %}"
+        >
+            {% csrf_token %}
+
+            {% if hoi_vien.tai_khoan.is_active %}
+            <input type="hidden" name="hanh_dong" value="khoa" />
+
+            <button class="danger-button" type="submit">
+                Khóa tài khoản
+            </button>
+            {% else %}
+            <input type="hidden" name="hanh_dong" value="mo_khoa" />
+
+            <button class="primary-button" type="submit">
+                Mở khóa tài khoản
+            </button>
+            {% endif %}
+        </form>
+    </div>
 
       <div class="detail-grid">
         <div class="detail-item">
