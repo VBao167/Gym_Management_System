@@ -35,6 +35,25 @@ def trang_quan_tri(request):
     )
 
 
+@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+def danh_sach_hoi_vien(request):
+    cap_nhat_trang_thai_toan_bo()
+
+    cac_hoi_vien = (
+        HoiVien.objects
+        .select_related("tai_khoan")
+        .order_by("ma_hv")
+    )
+
+    return render(
+        request,
+        "users/quan_tri/danh_sach_hoi_vien.html",
+        {
+            "cac_hoi_vien": cac_hoi_vien,
+        },
+    )
+
+
 @vai_tro_required(TaiKhoan.VaiTro.LE_TAN)
 def trang_le_tan(request):
     cap_nhat_trang_thai_toan_bo()

@@ -1293,3 +1293,103 @@ class DashboardQuanTriTests(TestCase):
             response,
             "Tổng quan hệ thống",
         )
+
+class DanhSachHoiVienTests(TestCase):
+    def setUp(self):
+        self.admin = TaiKhoan.objects.create_user(
+            username="admin_danh_sach_hoi_vien",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.ADMIN,
+        )
+
+        self.tai_khoan_le_tan = TaiKhoan.objects.create_user(
+            username="le_tan_khong_co_quyen",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.LE_TAN,
+        )
+
+        self.hoi_vien_1 = tao_hoi_vien(
+            ho_ten="Nguyễn Văn An",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2001, 1, 1),
+            sdt="0951000001",
+            email="nguyen.van.an@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.hoi_vien_2 = tao_hoi_vien(
+            ho_ten="Trần Thị Bình",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2002, 2, 2),
+            sdt="0951000002",
+            email="tran.thi.binh@example.com",
+            dia_chi="TP.HCM",
+        )
+
+    def test_admin_xem_duoc_danh_sach_hoi_vien(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("gym:danh_sach_hoi_vien")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "users/quan_tri/danh_sach_hoi_vien.html",
+        )
+
+        cac_hoi_vien = list(
+            response.context["cac_hoi_vien"]
+        )
+
+        self.assertEqual(len(cac_hoi_vien), 2)
+        self.assertEqual(
+            [hoi_vien.ma_hv for hoi_vien in cac_hoi_vien],
+            sorted(
+                [
+                    self.hoi_vien_1.ma_hv,
+                    self.hoi_vien_2.ma_hv,
+                ]
+            ),
+        )
+
+        self.assertContains(response, "Nguyễn Văn An")
+        self.assertContains(response, "Trần Thị Bình")
+
+    def test_danh_sach_rong_hien_thi_thong_bao(self):
+        HoiVien.objects.all().delete()
+
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("gym:danh_sach_hoi_vien")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "Chưa có hội viên trong hệ thống.",
+        )
+
+    def test_tai_khoan_khong_phai_admin_bi_tu_choi(self):
+        self.client.force_login(self.tai_khoan_le_tan)
+
+        response = self.client.get(
+            reverse("gym:danh_sach_hoi_vien")
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_danh_sach_dong_bo_trang_thai_truoc_khi_hien_thi(self):
+        self.client.force_login(self.admin)
+
+        with patch(
+            "gym.views.cap_nhat_trang_thai_toan_bo"
+        ) as ham_dong_bo:
+            response = self.client.get(
+                reverse("gym:danh_sach_hoi_vien")
+            )
+
+        self.assertEqual(response.status_code, 200)
+        ham_dong_bo.assert_called_once_with()

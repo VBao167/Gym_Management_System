@@ -40,10 +40,13 @@
                 Tổng quan
               </a>
 
-              <span class="sidebar-link is-disabled">
+            <a
+                href="{% url 'gym:danh_sach_hoi_vien' %}"
+                class="sidebar-link {% if request.resolver_match.url_name == 'danh_sach_hoi_vien' %}is-active{% endif %}"
+            >
                 <span class="sidebar-icon">02</span>
                 Hội viên
-              </span>
+            </a>
 
               <span class="sidebar-link is-disabled">
                 <span class="sidebar-icon">03</span>

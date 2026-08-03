@@ -12,6 +12,11 @@ urlpatterns = [
         name="trang_quan_tri",
     ),
     path(
+        "quan-tri/hoi-vien/",
+        views.danh_sach_hoi_vien,
+        name="danh_sach_hoi_vien",
+    ),
+    path(
         "le-tan/",
         views.trang_le_tan,
         name="trang_le_tan",

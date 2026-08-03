@@ -1,0 +1,61 @@
+{% extends "base.html" %} {% block title %} Quản lý hội viên | Hệ thống quản lý
+phòng Gym {% endblock %} {% block page_title %} Quản lý hội viên {% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="page-heading">
+    <div>
+      <h2>Danh sách hội viên</h2>
+      <p>
+        Theo dõi thông tin và trạng thái hiện tại của các hội viên trong hệ
+        thống.
+      </p>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã hội viên</th>
+            <th>Họ tên</th>
+            <th>Số điện thoại</th>
+            <th>Email</th>
+            <th>Ngày tham gia</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for hoi_vien in cac_hoi_vien %}
+          <tr>
+            <td>
+              <strong>{{ hoi_vien.ma_hv }}</strong>
+            </td>
+            <td>{{ hoi_vien.ho_ten }}</td>
+            <td>{{ hoi_vien.sdt }}</td>
+            <td>{{ hoi_vien.email }}</td>
+            <td>{{ hoi_vien.ngay_tham_gia|date:"d/m/Y" }}</td>
+            <td>
+              {% if hoi_vien.trang_thai %}
+              <span class="status-badge status-active"> Đang hoạt động </span>
+              {% else %}
+              <span class="status-badge status-inactive">
+                Không hoạt động
+              </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="empty-state">
+              Chưa có hội viên trong hệ thống.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
