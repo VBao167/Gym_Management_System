@@ -1,9 +1,11 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from accounts.decorators import vai_tro_required
 from accounts.models import TaiKhoan
+from gym.forms import TaoHoiVienForm
 from gym.models import DiemDanh, GoiTap, HoiVien
+from gym.services.nguoi_dung import tao_hoi_vien_tu_doi_tuong
 from gym.services.trang_thai_hoi_vien import (
     cap_nhat_trang_thai_toan_bo,
 )
@@ -50,6 +52,32 @@ def danh_sach_hoi_vien(request):
         "users/quan_tri/danh_sach_hoi_vien.html",
         {
             "cac_hoi_vien": cac_hoi_vien,
+        },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+def tao_hoi_vien_moi(request):
+    form = TaoHoiVienForm(
+        request.POST or None
+    )
+
+    if request.method == "POST" and form.is_valid():
+        hoi_vien = form.save(commit=False)
+
+        tao_hoi_vien_tu_doi_tuong(
+            hoi_vien
+        )
+
+        return redirect(
+            "gym:danh_sach_hoi_vien"
+        )
+
+    return render(
+        request,
+        "users/quan_tri/tao_hoi_vien.html",
+        {
+            "form": form,
         },
     )
 

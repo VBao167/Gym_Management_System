@@ -1393,3 +1393,109 @@ class DanhSachHoiVienTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         ham_dong_bo.assert_called_once_with()
+
+class TaoHoiVienTuGiaoDienTests(TestCase):
+    def setUp(self):
+        self.admin = TaiKhoan.objects.create_user(
+            username="admin_tao_hoi_vien",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.ADMIN,
+        )
+
+        self.le_tan = TaiKhoan.objects.create_user(
+            username="le_tan_khong_duoc_tao_hoi_vien",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.LE_TAN,
+        )
+
+        self.url = reverse("gym:tao_hoi_vien_moi")
+
+        self.du_lieu_hop_le = {
+            "ho_ten": "Nguyễn Minh Khang",
+            "gioi_tinh": "Nam",
+            "ngay_sinh": "2002-01-01",
+            "sdt": "0961000001",
+            "email": "minh.khang@example.com",
+            "dia_chi": "TP.HCM",
+        }
+
+    def test_admin_xem_duoc_form_tao_hoi_vien(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "users/quan_tri/tao_hoi_vien.html",
+        )
+        self.assertContains(
+            response,
+            "Thông tin hội viên mới",
+        )
+
+    def test_admin_tao_hoi_vien_kem_tai_khoan_thanh_cong(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            self.url,
+            self.du_lieu_hop_le,
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("gym:danh_sach_hoi_vien"),
+        )
+
+        self.assertEqual(HoiVien.objects.count(), 1)
+
+        hoi_vien = HoiVien.objects.select_related(
+            "tai_khoan"
+        ).get()
+
+        self.assertEqual(
+            hoi_vien.ho_ten,
+            "Nguyễn Minh Khang",
+        )
+        self.assertFalse(hoi_vien.trang_thai)
+
+        self.assertEqual(
+            hoi_vien.tai_khoan.username,
+            hoi_vien.ma_hv,
+        )
+        self.assertEqual(
+            hoi_vien.tai_khoan.vai_tro,
+            TaiKhoan.VaiTro.HOI_VIEN,
+        )
+        self.assertTrue(hoi_vien.tai_khoan.is_active)
+        self.assertTrue(
+            hoi_vien.tai_khoan.check_password("1")
+        )
+
+    def test_du_lieu_khong_hop_le_khong_tao_hoi_vien(self):
+        self.client.force_login(self.admin)
+
+        du_lieu_loi = self.du_lieu_hop_le.copy()
+        du_lieu_loi["email"] = "email-khong-hop-le"
+
+        response = self.client.post(
+            self.url,
+            du_lieu_loi,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            response.context["form"].is_valid()
+        )
+        self.assertIn(
+            "email",
+            response.context["form"].errors,
+        )
+        self.assertEqual(HoiVien.objects.count(), 0)
+
+    def test_tai_khoan_khong_phai_admin_bi_tu_choi(self):
+        self.client.force_login(self.le_tan)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 403)

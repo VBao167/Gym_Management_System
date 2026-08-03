@@ -17,6 +17,11 @@ urlpatterns = [
         name="danh_sach_hoi_vien",
     ),
     path(
+    "quan-tri/hoi-vien/them-moi/",
+    views.tao_hoi_vien_moi,
+    name="tao_hoi_vien_moi",
+    ),
+    path(
         "le-tan/",
         views.trang_le_tan,
         name="trang_le_tan",

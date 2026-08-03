@@ -547,3 +547,48 @@ body {
   color: var(--muted);
   text-align: center !important;
 }
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 9px;
+  color: #ffffff;
+  background: var(--primary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-button:hover {
+  background: #1e40af;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 15px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text);
+  background: var(--surface);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.secondary-button:hover {
+  border-color: #aebacc;
+  background: #f8fafc;
+}
