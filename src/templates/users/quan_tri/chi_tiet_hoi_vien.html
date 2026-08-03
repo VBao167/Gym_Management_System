@@ -19,12 +19,21 @@
         </p>
       </div>
 
-      <a
-        class="secondary-button"
-        href="{% url 'gym:danh_sach_hoi_vien' %}"
-      >
-        Quay lại danh sách
-      </a>
+      <div class="page-heading-actions">
+        <a
+            class="primary-button"
+            href="{% url 'gym:chinh_sua_hoi_vien' hoi_vien.ma_hv %}"
+        >
+            Chỉnh sửa
+        </a>
+
+        <a
+            class="secondary-button"
+            href="{% url 'gym:danh_sach_hoi_vien' %}"
+        >
+            Quay lại danh sách
+        </a>
+        </div>
     </div>
 
     <div class="detail-card">

@@ -1579,3 +1579,156 @@ class ChiTietHoiVienTests(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 403)
+
+class ChinhSuaHoiVienTests(TestCase):
+    def setUp(self):
+        self.admin = TaiKhoan.objects.create_user(
+            username="admin_chinh_sua_hoi_vien",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.ADMIN,
+        )
+
+        self.le_tan = TaiKhoan.objects.create_user(
+            username="le_tan_khong_duoc_chinh_sua",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.LE_TAN,
+        )
+
+        self.hoi_vien = tao_hoi_vien(
+            ho_ten="Nguyễn Minh Khang",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2002, 1, 1),
+            sdt="0962000001",
+            email="minh.khang.chinh.sua@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.url = reverse(
+            "gym:chinh_sua_hoi_vien",
+            args=[self.hoi_vien.ma_hv],
+        )
+
+        self.du_lieu_cap_nhat = {
+            "ho_ten": "Nguyễn Minh Khang",
+            "gioi_tinh": "Nam",
+            "ngay_sinh": "2002-01-01",
+            "sdt": "0962000010",
+            "email": "minh.khang.chinh.sua@example.com",
+            "dia_chi": "Bình Chánh, TP.HCM",
+        }
+
+    def test_admin_xem_duoc_form_chinh_sua(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "users/quan_tri/tao_hoi_vien.html",
+        )
+        self.assertEqual(
+            response.context["form"].instance,
+            self.hoi_vien,
+        )
+        self.assertContains(
+            response,
+            "Cập nhật thông tin hội viên",
+        )
+
+    def test_admin_chinh_sua_hoi_vien_thanh_cong(self):
+        self.client.force_login(self.admin)
+
+        ma_hv_ban_dau = self.hoi_vien.ma_hv
+        ma_tk_ban_dau = self.hoi_vien.tai_khoan_id
+        username_ban_dau = self.hoi_vien.tai_khoan.username
+        trang_thai_ban_dau = self.hoi_vien.trang_thai
+
+        response = self.client.post(
+            self.url,
+            self.du_lieu_cap_nhat,
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "gym:chi_tiet_hoi_vien",
+                args=[ma_hv_ban_dau],
+            ),
+        )
+
+        self.hoi_vien.refresh_from_db()
+        self.hoi_vien.tai_khoan.refresh_from_db()
+
+        self.assertEqual(
+            self.hoi_vien.sdt,
+            "0962000010",
+        )
+        self.assertEqual(
+            self.hoi_vien.dia_chi,
+            "Bình Chánh, TP.HCM",
+        )
+
+        self.assertEqual(
+            self.hoi_vien.ma_hv,
+            ma_hv_ban_dau,
+        )
+        self.assertEqual(
+            self.hoi_vien.tai_khoan_id,
+            ma_tk_ban_dau,
+        )
+        self.assertEqual(
+            self.hoi_vien.tai_khoan.username,
+            username_ban_dau,
+        )
+        self.assertEqual(
+            self.hoi_vien.trang_thai,
+            trang_thai_ban_dau,
+        )
+
+    def test_du_lieu_khong_hop_le_khong_duoc_cap_nhat(self):
+        self.client.force_login(self.admin)
+
+        du_lieu_loi = self.du_lieu_cap_nhat.copy()
+        du_lieu_loi["email"] = "email-khong-hop-le"
+
+        response = self.client.post(
+            self.url,
+            du_lieu_loi,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "email",
+            response.context["form"].errors,
+        )
+
+        self.hoi_vien.refresh_from_db()
+
+        self.assertEqual(
+            self.hoi_vien.sdt,
+            "0962000001",
+        )
+        self.assertEqual(
+            self.hoi_vien.dia_chi,
+            "TP.HCM",
+        )
+
+    def test_ma_hoi_vien_khong_ton_tai_tra_ve_404(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse(
+                "gym:chinh_sua_hoi_vien",
+                args=["HV999999"],
+            )
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_tai_khoan_khong_phai_admin_bi_tu_choi(self):
+        self.client.force_login(self.le_tan)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 403)

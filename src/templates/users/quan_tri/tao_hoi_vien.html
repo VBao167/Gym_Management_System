@@ -1,22 +1,19 @@
 ﻿{% extends "base.html" %}
 
 {% block title %}
-  Thêm hội viên | Hệ thống quản lý phòng Gym
+  {{ tieu_de_trang }} | Hệ thống quản lý phòng Gym
 {% endblock %}
 
 {% block page_title %}
-  Thêm hội viên
+  {{ tieu_de_trang }}
 {% endblock %}
 
 {% block content %}
   <section class="page-section">
     <div class="page-heading">
       <div>
-        <h2>Thông tin hội viên mới</h2>
-        <p>
-          Tài khoản đăng nhập sẽ được hệ thống tạo tự động
-          sau khi lưu hội viên.
-        </p>
+        <h2>{{ tieu_de_bieu_mau }}</h2>
+        <p>{{ mo_ta_bieu_mau }}</p>
       </div>
     </div>
 
@@ -47,15 +44,24 @@
 
       <div class="form-actions">
         <button class="primary-button" type="submit">
-          Lưu hội viên
+          {{ nhan_nut_luu }}
         </button>
 
-        <a
-          class="secondary-button"
-          href="{% url 'gym:danh_sach_hoi_vien' %}"
-        >
-          Quay lại danh sách
-        </a>
+        {% if hoi_vien %}
+          <a
+            class="secondary-button"
+            href="{% url 'gym:chi_tiet_hoi_vien' hoi_vien.ma_hv %}"
+          >
+            Hủy chỉnh sửa
+          </a>
+        {% else %}
+          <a
+            class="secondary-button"
+            href="{% url 'gym:danh_sach_hoi_vien' %}"
+          >
+            Quay lại danh sách
+          </a>
+        {% endif %}
       </div>
     </form>
   </section>

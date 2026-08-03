@@ -665,3 +665,9 @@ body {
   width: fit-content;
   align-self: flex-start;
 }
+
+.page-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}

@@ -22,10 +22,15 @@ urlpatterns = [
     name="tao_hoi_vien_moi",
     ),
     path(
+        "quan-tri/hoi-vien/<str:ma_hv>/chinh-sua/",
+        views.chinh_sua_hoi_vien,
+        name="chinh_sua_hoi_vien",
+        ),
+    path(
     "quan-tri/hoi-vien/<str:ma_hv>/",
     views.chi_tiet_hoi_vien,
     name="chi_tiet_hoi_vien",
-),
+    ),
     path(
         "le-tan/",
         views.trang_le_tan,
