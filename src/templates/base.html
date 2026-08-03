@@ -5,26 +5,221 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %} Hệ thống quản lý phòng Gym {% endblock %}</title>
+
+    <title>
+      {% block title %}
+        Hệ thống quản lý phòng Gym
+      {% endblock %}
+    </title>
 
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
   </head>
+
   <body>
-    <header>
-      <h1>Hệ thống quản lý phòng Gym</h1>
+    {% if request.user.is_authenticated %}
+      <div class="app-shell">
+        <aside class="sidebar">
+          <div class="brand">
+            <div class="brand-logo">GM</div>
 
-      {% if request.user.is_authenticated %}
-      <div>
-        <span> Tài khoản: {{ request.user.username }} </span>
+            <div>
+              <strong>Gym Manager</strong>
+              <span>Management System</span>
+            </div>
+          </div>
 
-        <form method="post" action="{% url 'accounts:dang_xuat' %}">
-          {% csrf_token %}
-          <button type="submit">Đăng xuất</button>
-        </form>
+          <nav class="sidebar-nav">
+            {% if request.user.vai_tro == "Admin" %}
+              <p class="sidebar-heading">QUẢN TRỊ HỆ THỐNG</p>
+
+              <a
+                href="{% url 'gym:trang_quan_tri' %}"
+                class="sidebar-link {% if request.resolver_match.url_name == 'trang_quan_tri' %}is-active{% endif %}"
+              >
+                <span class="sidebar-icon">01</span>
+                Tổng quan
+              </a>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">02</span>
+                Hội viên
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">03</span>
+                Nhân viên
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">04</span>
+                Gói tập
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">05</span>
+                Đăng ký và hóa đơn
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">06</span>
+                Lịch tập PT
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">07</span>
+                Điểm danh
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">08</span>
+                Báo cáo
+              </span>
+
+            {% elif request.user.vai_tro == "LeTan" %}
+              <p class="sidebar-heading">KHU VỰC LỄ TÂN</p>
+
+              <a
+                href="{% url 'gym:trang_le_tan' %}"
+                class="sidebar-link is-active"
+              >
+                <span class="sidebar-icon">01</span>
+                Trang chính
+              </a>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">02</span>
+                Hội viên
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">03</span>
+                Đăng ký gói
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">04</span>
+                Điểm danh
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">05</span>
+                Lịch tập PT
+              </span>
+
+            {% elif request.user.vai_tro == "PT" %}
+              <p class="sidebar-heading">KHU VỰC HUẤN LUYỆN VIÊN</p>
+
+              <a
+                href="{% url 'gym:trang_pt' %}"
+                class="sidebar-link is-active"
+              >
+                <span class="sidebar-icon">01</span>
+                Lịch tập của tôi
+              </a>
+
+            {% elif request.user.vai_tro == "HoiVien" %}
+              <p class="sidebar-heading">KHU VỰC HỘI VIÊN</p>
+
+              <a
+                href="{% url 'gym:trang_hoi_vien' %}"
+                class="sidebar-link is-active"
+              >
+                <span class="sidebar-icon">01</span>
+                Tổng quan
+              </a>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">02</span>
+                Gói tập của tôi
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">03</span>
+                Lịch tập PT
+              </span>
+
+              <span class="sidebar-link is-disabled">
+                <span class="sidebar-icon">04</span>
+                Lịch sử điểm danh
+              </span>
+            {% endif %}
+          </nav>
+
+          <div class="sidebar-footer">
+            <span>Đồ án Quản lý phòng Gym</span>
+          </div>
+        </aside>
+
+        <div class="app-main">
+          <header class="topbar">
+            <div>
+              <p class="topbar-label">HỆ THỐNG QUẢN LÝ</p>
+
+              <h1>
+                {% block page_title %}
+                  {% if request.user.vai_tro == "Admin" %}
+                    Tổng quan quản trị
+                  {% elif request.user.vai_tro == "LeTan" %}
+                    Khu vực lễ tân
+                  {% elif request.user.vai_tro == "PT" %}
+                    Khu vực huấn luyện viên
+                  {% else %}
+                    Khu vực hội viên
+                  {% endif %}
+                {% endblock %}
+              </h1>
+            </div>
+
+            <div class="user-panel">
+              <div class="user-avatar">
+                {{ request.user.username|first|upper }}
+              </div>
+
+              <div class="user-info">
+                <strong>{{ request.user.username }}</strong>
+                <span>{{ request.user.get_vai_tro_display }}</span>
+              </div>
+
+              <form
+                method="post"
+                action="{% url 'accounts:dang_xuat' %}"
+              >
+                {% csrf_token %}
+                <button class="logout-button" type="submit">
+                  Đăng xuất
+                </button>
+              </form>
+            </div>
+          </header>
+
+          <main class="content-area">
+    {% else %}
+      <div class="auth-shell">
+        <section class="auth-introduction">
+          <div class="brand-logo brand-logo-large">GM</div>
+
+          <p class="auth-eyebrow">GYM MANAGEMENT SYSTEM</p>
+          <h1>Quản lý phòng gym hiệu quả và tập trung</h1>
+
+          <p>
+            Quản lý hội viên, gói tập, điểm danh, hóa đơn
+            và lịch tập PT trên cùng một hệ thống.
+          </p>
+        </section>
+
+        <main class="auth-content">
+    {% endif %}
+
+            {% block content %}
+            {% endblock %}
+
+    {% if request.user.is_authenticated %}
+          </main>
+        </div>
       </div>
-      {% endif %}
-    </header>
-
-    <main>{% block content %} {% endblock %}</main>
+    {% else %}
+        </main>
+      </div>
+    {% endif %}
   </body>
 </html>
