@@ -1,4 +1,4 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from accounts.decorators import vai_tro_required
@@ -78,6 +78,24 @@ def tao_hoi_vien_moi(request):
         "users/quan_tri/tao_hoi_vien.html",
         {
             "form": form,
+        },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+def chi_tiet_hoi_vien(request, ma_hv):
+    cap_nhat_trang_thai_toan_bo()
+
+    hoi_vien = get_object_or_404(
+        HoiVien.objects.select_related("tai_khoan"),
+        pk=ma_hv,
+    )
+
+    return render(
+        request,
+        "users/quan_tri/chi_tiet_hoi_vien.html",
+        {
+            "hoi_vien": hoi_vien,
         },
     )
 

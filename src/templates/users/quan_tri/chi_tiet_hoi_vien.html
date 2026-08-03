@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Chi tiết hội viên | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Chi tiết hội viên
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>{{ hoi_vien.ho_ten }}</h2>
+        <p>
+          Thông tin hồ sơ và tài khoản của hội viên
+          {{ hoi_vien.ma_hv }}.
+        </p>
+      </div>
+
+      <a
+        class="secondary-button"
+        href="{% url 'gym:danh_sach_hoi_vien' %}"
+      >
+        Quay lại danh sách
+      </a>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span>Mã hội viên</span>
+          <strong>{{ hoi_vien.ma_hv }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Họ và tên</span>
+          <strong>{{ hoi_vien.ho_ten }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Giới tính</span>
+          <strong>{{ hoi_vien.get_gioi_tinh_display }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Ngày sinh</span>
+          <strong>{{ hoi_vien.ngay_sinh|date:"d/m/Y" }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Số điện thoại</span>
+          <strong>{{ hoi_vien.sdt }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Email</span>
+          <strong>{{ hoi_vien.email }}</strong>
+        </div>
+
+        <div class="detail-item detail-item-full">
+          <span>Địa chỉ</span>
+          <strong>{{ hoi_vien.dia_chi }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Ngày tham gia</span>
+          <strong>
+            {{ hoi_vien.ngay_tham_gia|date:"d/m/Y" }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Trạng thái hội viên</span>
+
+          {% if hoi_vien.trang_thai %}
+            <strong class="status-badge status-active">
+              Đang hoạt động
+            </strong>
+          {% else %}
+            <strong class="status-badge status-inactive">
+              Không hoạt động
+            </strong>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Thông tin tài khoản</h3>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span>Tên đăng nhập</span>
+          <strong>{{ hoi_vien.tai_khoan.username }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Vai trò</span>
+          <strong>
+            {{ hoi_vien.tai_khoan.get_vai_tro_display }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Trạng thái tài khoản</span>
+
+          {% if hoi_vien.tai_khoan.is_active %}
+            <strong class="status-badge status-active">
+              Đang hoạt động
+            </strong>
+          {% else %}
+            <strong class="status-badge status-inactive">
+              Đã khóa
+            </strong>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

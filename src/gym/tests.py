@@ -1499,3 +1499,83 @@ class TaoHoiVienTuGiaoDienTests(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 403)
+
+class ChiTietHoiVienTests(TestCase):
+    def setUp(self):
+        self.admin = TaiKhoan.objects.create_user(
+            username="admin_chi_tiet_hoi_vien",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.ADMIN,
+        )
+
+        self.le_tan = TaiKhoan.objects.create_user(
+            username="le_tan_khong_duoc_xem_chi_tiet",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.LE_TAN,
+        )
+
+        self.hoi_vien = tao_hoi_vien(
+            ho_ten="Nguyễn Minh Khang",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2002, 1, 1),
+            sdt="0961000001",
+            email="minh.khang.chi.tiet@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.url = reverse(
+            "gym:chi_tiet_hoi_vien",
+            args=[self.hoi_vien.ma_hv],
+        )
+
+    def test_admin_xem_duoc_chi_tiet_hoi_vien(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "users/quan_tri/chi_tiet_hoi_vien.html",
+        )
+        self.assertEqual(
+            response.context["hoi_vien"],
+            self.hoi_vien,
+        )
+
+        self.assertContains(response, "Nguyễn Minh Khang")
+        self.assertContains(response, self.hoi_vien.ma_hv)
+        self.assertContains(
+            response,
+            self.hoi_vien.tai_khoan.username,
+        )
+
+    def test_chi_tiet_dong_bo_trang_thai_truoc_khi_hien_thi(self):
+        self.client.force_login(self.admin)
+
+        with patch(
+            "gym.views.cap_nhat_trang_thai_toan_bo"
+        ) as ham_dong_bo:
+            response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        ham_dong_bo.assert_called_once_with()
+
+    def test_ma_hoi_vien_khong_ton_tai_tra_ve_404(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse(
+                "gym:chi_tiet_hoi_vien",
+                args=["HV999999"],
+            )
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_tai_khoan_khong_phai_admin_bi_tu_choi(self):
+        self.client.force_login(self.le_tan)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 403)
