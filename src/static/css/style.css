@@ -696,3 +696,50 @@ body {
 .danger-button:hover {
   background: #912018;
 }
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.inline-form {
+  display: inline;
+  margin: 0;
+}
+
+.table-action-button {
+  padding: 0;
+  border: 0;
+  color: var(--primary);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.table-action-button:hover {
+  text-decoration: underline;
+}
+
+.table-action-danger {
+  color: #b42318;
+}
+
+.form-group .form-checkbox {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  padding: 0;
+  margin: 2px 0 0;
+  align-self: flex-start;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.form-help {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}

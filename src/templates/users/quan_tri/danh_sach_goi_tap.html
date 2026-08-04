@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Quản lý gói tập | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Quản lý gói tập
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Danh sách gói tập</h2>
+        <p>
+          Quản lý thời hạn, mức giá, số buổi PT
+          và trạng thái kinh doanh của các gói tập.
+        </p>
+      </div>
+
+      <a
+        class="primary-button"
+        href="{% url 'gym:tao_goi_tap_moi' %}"
+      >
+        Thêm gói tập
+      </a>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã gói</th>
+            <th>Tên gói</th>
+            <th>Thời hạn</th>
+            <th>Giá tiền</th>
+            <th>PT</th>
+            <th>Số buổi PT</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for goi_tap in cac_goi_tap %}
+            <tr>
+              <td>
+                <strong>{{ goi_tap.ma_goi }}</strong>
+              </td>
+
+              <td>{{ goi_tap.ten_goi }}</td>
+
+              <td>
+                {{ goi_tap.thoi_han_ngay }} ngày
+              </td>
+
+              <td>
+                {{ goi_tap.gia_tien|floatformat:0 }} đ
+              </td>
+
+              <td>
+                {% if goi_tap.co_pt %}
+                  Có
+                {% else %}
+                  Không
+                {% endif %}
+              </td>
+
+              <td>{{ goi_tap.so_buoi_pt }}</td>
+
+              <td>
+                {% if goi_tap.trang_thai %}
+                  <span class="status-badge status-active">
+                    Đang kinh doanh
+                  </span>
+                {% else %}
+                  <span class="status-badge status-inactive">
+                    Ngừng kinh doanh
+                  </span>
+                {% endif %}
+              </td>
+
+              <td>
+                <div class="table-actions">
+                  <a
+                    class="table-action-link"
+                    href="{% url 'gym:chinh_sua_goi_tap' goi_tap.ma_goi %}"
+                  >
+                    Chỉnh sửa
+                  </a>
+
+                  <form
+                    class="inline-form"
+                    method="post"
+                    action="{% url 'gym:doi_trang_thai_goi_tap' goi_tap.ma_goi %}"
+                  >
+                    {% csrf_token %}
+
+                    {% if goi_tap.trang_thai %}
+                      <input
+                        type="hidden"
+                        name="hanh_dong"
+                        value="ngung_kinh_doanh"
+                      />
+
+                      <button
+                        class="table-action-button table-action-danger"
+                        type="submit"
+                      >
+                        Ngừng kinh doanh
+                      </button>
+                    {% else %}
+                      <input
+                        type="hidden"
+                        name="hanh_dong"
+                        value="mo_kinh_doanh"
+                      />
+
+                      <button
+                        class="table-action-button"
+                        type="submit"
+                      >
+                        Mở kinh doanh
+                      </button>
+                    {% endif %}
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="empty-state">
+                Chưa có gói tập trong hệ thống.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

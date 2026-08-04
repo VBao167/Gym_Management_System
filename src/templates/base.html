@@ -53,10 +53,13 @@
                 Nhân viên
               </span>
 
-              <span class="sidebar-link is-disabled">
+            <a
+                href="{% url 'gym:danh_sach_goi_tap' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_goi_tap' or request.resolver_match.url_name == 'tao_goi_tap_moi' or request.resolver_match.url_name == 'chinh_sua_goi_tap' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">04</span>
                 Gói tập
-              </span>
+            </a>
 
               <span class="sidebar-link is-disabled">
                 <span class="sidebar-icon">05</span>

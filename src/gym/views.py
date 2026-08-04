@@ -5,7 +5,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.decorators import vai_tro_required
 from accounts.models import TaiKhoan
-from gym.forms import TaoHoiVienForm
+from gym.forms import GoiTapForm, TaoHoiVienForm
 from gym.models import DiemDanh, GoiTap, HoiVien
 from gym.services.nguoi_dung import tao_hoi_vien_tu_doi_tuong
 from gym.services.trang_thai_hoi_vien import (
@@ -176,6 +176,111 @@ def chi_tiet_hoi_vien(request, ma_hv):
         {
             "hoi_vien": hoi_vien,
         },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+def danh_sach_goi_tap(request):
+    cac_goi_tap = GoiTap.objects.order_by("ma_goi")
+
+    return render(
+        request,
+        "users/quan_tri/danh_sach_goi_tap.html",
+        {
+            "cac_goi_tap": cac_goi_tap,
+        },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+def tao_goi_tap_moi(request):
+    form = GoiTapForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+
+        return redirect(
+            "gym:danh_sach_goi_tap"
+        )
+
+    return render(
+        request,
+        "users/quan_tri/bieu_mau_goi_tap.html",
+        {
+            "form": form,
+            "tieu_de_trang": "Thêm gói tập",
+            "tieu_de_bieu_mau": "Thông tin gói tập mới",
+            "mo_ta_bieu_mau": (
+                "Khai báo thời hạn, mức giá và quyền sử dụng "
+                "PT của gói tập."
+            ),
+            "nhan_nut_luu": "Lưu gói tập",
+        },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+def chinh_sua_goi_tap(request, ma_goi):
+    goi_tap = get_object_or_404(
+        GoiTap,
+        pk=ma_goi,
+    )
+
+    form = GoiTapForm(
+        request.POST or None,
+        instance=goi_tap,
+    )
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+
+        return redirect(
+            "gym:danh_sach_goi_tap"
+        )
+
+    return render(
+        request,
+        "users/quan_tri/bieu_mau_goi_tap.html",
+        {
+            "form": form,
+            "goi_tap": goi_tap,
+            "tieu_de_trang": "Chỉnh sửa gói tập",
+            "tieu_de_bieu_mau": "Cập nhật thông tin gói tập",
+            "mo_ta_bieu_mau": (
+                f"Chỉnh sửa thông tin của gói {goi_tap.ma_goi}."
+            ),
+            "nhan_nut_luu": "Lưu thay đổi",
+        },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+@require_POST
+def doi_trang_thai_goi_tap(request, ma_goi):
+    goi_tap = get_object_or_404(
+        GoiTap,
+        pk=ma_goi,
+    )
+
+    hanh_dong = request.POST.get("hanh_dong")
+
+    if hanh_dong == "ngung_kinh_doanh":
+        trang_thai_moi = False
+    elif hanh_dong == "mo_kinh_doanh":
+        trang_thai_moi = True
+    else:
+        return HttpResponseBadRequest(
+            "Hành động thay đổi trạng thái không hợp lệ."
+        )
+
+    if goi_tap.trang_thai != trang_thai_moi:
+        goi_tap.trang_thai = trang_thai_moi
+        goi_tap.save(
+            update_fields=["trang_thai"],
+        )
+
+    return redirect(
+        "gym:danh_sach_goi_tap"
     )
 
 
