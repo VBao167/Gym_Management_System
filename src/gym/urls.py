@@ -42,6 +42,59 @@ urlpatterns = [
         name="chi_tiet_hoi_vien",
     ),
 
+    # Quản lý Nhân viên
+    path(
+        "quan-tri/nhan-vien/",
+        views.danh_sach_nhan_vien,
+        name="danh_sach_nhan_vien",
+    ),
+    path(
+        (
+            "quan-tri/nhan-vien/them-moi/"
+            "<slug:loai_nhan_vien>/"
+        ),
+        views.tao_nhan_vien_moi,
+        name="tao_nhan_vien_moi",
+    ),
+    path(
+        (
+            "quan-tri/nhan-vien/"
+            "<slug:loai_nhan_vien>/"
+            "<str:ma_nhan_vien>/chinh-sua/"
+        ),
+        views.chinh_sua_nhan_vien,
+        name="chinh_sua_nhan_vien",
+    ),
+    path(
+        (
+            "quan-tri/nhan-vien/"
+            "<slug:loai_nhan_vien>/"
+            "<str:ma_nhan_vien>/"
+            "doi-trang-thai-lam-viec/"
+        ),
+        views.doi_trang_thai_lam_viec_nhan_vien,
+        name="doi_trang_thai_lam_viec_nhan_vien",
+    ),
+    path(
+        (
+            "quan-tri/nhan-vien/"
+            "<slug:loai_nhan_vien>/"
+            "<str:ma_nhan_vien>/"
+            "doi-trang-thai-tai-khoan/"
+        ),
+        views.doi_trang_thai_tai_khoan_nhan_vien,
+        name="doi_trang_thai_tai_khoan_nhan_vien",
+    ),
+    path(
+        (
+            "quan-tri/nhan-vien/"
+            "<slug:loai_nhan_vien>/"
+            "<str:ma_nhan_vien>/"
+        ),
+        views.chi_tiet_nhan_vien,
+        name="chi_tiet_nhan_vien",
+    ),
+
     # Quản lý Gói tập
     path(
         "quan-tri/goi-tap/",

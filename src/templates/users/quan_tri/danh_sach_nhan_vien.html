@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Quản lý nhân viên | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Quản lý nhân viên
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Danh sách nhân viên</h2>
+        <p>
+          Quản lý hồ sơ, trạng thái làm việc và tài khoản
+          của Lễ tân và Huấn luyện viên.
+        </p>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading detail-card-heading-actions">
+        <h3>Lễ tân</h3>
+
+        <a
+          class="primary-button"
+          href="{% url 'gym:tao_nhan_vien_moi' 'le-tan' %}"
+        >
+          Thêm lễ tân
+        </a>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã nhân viên</th>
+              <th>Họ tên</th>
+              <th>Số điện thoại</th>
+              <th>Ngày vào làm</th>
+              <th>Làm việc</th>
+              <th>Tài khoản</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for nhan_vien in cac_le_tan %}
+              <tr>
+                <td><strong>{{ nhan_vien.ma_lt }}</strong></td>
+                <td>{{ nhan_vien.ho_ten }}</td>
+                <td>{{ nhan_vien.sdt }}</td>
+                <td>{{ nhan_vien.ngay_vao_lam|date:"d/m/Y" }}</td>
+
+                <td>
+                  {% if nhan_vien.trang_thai %}
+                    <span class="status-badge status-active">
+                      Đang làm việc
+                    </span>
+                  {% else %}
+                    <span class="status-badge status-inactive">
+                      Ngừng làm việc
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if nhan_vien.tai_khoan.is_active %}
+                    <span class="status-badge status-active">
+                      Đang hoạt động
+                    </span>
+                  {% else %}
+                    <span class="status-badge status-inactive">
+                      Đã khóa
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  <a
+                    class="table-action-link"
+                    href="{% url 'gym:chi_tiet_nhan_vien' 'le-tan' nhan_vien.ma_lt %}"
+                  >
+                    Xem chi tiết
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" class="empty-state">
+                  Chưa có lễ tân trong hệ thống.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading detail-card-heading-actions">
+        <h3>Huấn luyện viên</h3>
+
+        <a
+          class="primary-button"
+          href="{% url 'gym:tao_nhan_vien_moi' 'pt' %}"
+        >
+          Thêm huấn luyện viên
+        </a>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã nhân viên</th>
+              <th>Họ tên</th>
+              <th>Số điện thoại</th>
+              <th>Ngày vào làm</th>
+              <th>Làm việc</th>
+              <th>Tài khoản</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for nhan_vien in cac_huan_luyen_vien %}
+              <tr>
+                <td><strong>{{ nhan_vien.ma_pt }}</strong></td>
+                <td>{{ nhan_vien.ho_ten }}</td>
+                <td>{{ nhan_vien.sdt }}</td>
+                <td>{{ nhan_vien.ngay_vao_lam|date:"d/m/Y" }}</td>
+
+                <td>
+                  {% if nhan_vien.trang_thai %}
+                    <span class="status-badge status-active">
+                      Đang làm việc
+                    </span>
+                  {% else %}
+                    <span class="status-badge status-inactive">
+                      Ngừng làm việc
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if nhan_vien.tai_khoan.is_active %}
+                    <span class="status-badge status-active">
+                      Đang hoạt động
+                    </span>
+                  {% else %}
+                    <span class="status-badge status-inactive">
+                      Đã khóa
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  <a
+                    class="table-action-link"
+                    href="{% url 'gym:chi_tiet_nhan_vien' 'pt' nhan_vien.ma_pt %}"
+                  >
+                    Xem chi tiết
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" class="empty-state">
+                  Chưa có huấn luyện viên trong hệ thống.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+{% endblock %}

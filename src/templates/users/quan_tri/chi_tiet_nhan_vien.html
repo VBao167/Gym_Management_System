@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Chi tiết nhân viên | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Chi tiết nhân viên
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>{{ nhan_vien.ho_ten }}</h2>
+        <p>{{ ten_loai }} {{ ma_nhan_vien }}</p>
+      </div>
+
+      <div class="page-heading-actions">
+        <a
+          class="primary-button"
+          href="{% url 'gym:chinh_sua_nhan_vien' loai_nhan_vien ma_nhan_vien %}"
+        >
+          Chỉnh sửa
+        </a>
+
+        <a
+          class="secondary-button"
+          href="{% url 'gym:danh_sach_nhan_vien' %}"
+        >
+          Quay lại danh sách
+        </a>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Thông tin hồ sơ</h3>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span>Mã nhân viên</span>
+          <strong>{{ ma_nhan_vien }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Chức vụ</span>
+          <strong>{{ ten_loai }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Họ và tên</span>
+          <strong>{{ nhan_vien.ho_ten }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Giới tính</span>
+          <strong>{{ nhan_vien.get_gioi_tinh_display }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Ngày sinh</span>
+          <strong>{{ nhan_vien.ngay_sinh|date:"d/m/Y" }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Số điện thoại</span>
+          <strong>{{ nhan_vien.sdt }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Email</span>
+          <strong>{{ nhan_vien.email }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Ngày vào làm</span>
+          <strong>{{ nhan_vien.ngay_vao_lam|date:"d/m/Y" }}</strong>
+        </div>
+
+        <div class="detail-item detail-item-full">
+          <span>Địa chỉ</span>
+          <strong>{{ nhan_vien.dia_chi }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading detail-card-heading-actions">
+        <h3>Trạng thái làm việc</h3>
+
+        <form
+          method="post"
+          action="{% url 'gym:doi_trang_thai_lam_viec_nhan_vien' loai_nhan_vien ma_nhan_vien %}"
+        >
+          {% csrf_token %}
+
+          {% if nhan_vien.trang_thai %}
+            <input
+              type="hidden"
+              name="hanh_dong"
+              value="ngung_lam_viec"
+            />
+
+            <button class="danger-button" type="submit">
+              Ngừng làm việc
+            </button>
+          {% else %}
+            <input
+              type="hidden"
+              name="hanh_dong"
+              value="cho_lam_viec_lai"
+            />
+
+            <button class="primary-button" type="submit">
+              Cho làm việc lại
+            </button>
+          {% endif %}
+        </form>
+      </div>
+
+      {% if nhan_vien.trang_thai %}
+        <span class="status-badge status-active">
+          Đang làm việc
+        </span>
+      {% else %}
+        <span class="status-badge status-inactive">
+          Ngừng làm việc
+        </span>
+      {% endif %}
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading detail-card-heading-actions">
+        <h3>Thông tin tài khoản</h3>
+
+        {% if nhan_vien.tai_khoan.is_active %}
+          <form
+            method="post"
+            action="{% url 'gym:doi_trang_thai_tai_khoan_nhan_vien' loai_nhan_vien ma_nhan_vien %}"
+          >
+            {% csrf_token %}
+            <input type="hidden" name="hanh_dong" value="khoa" />
+
+            <button class="danger-button" type="submit">
+              Khóa tài khoản
+            </button>
+          </form>
+        {% elif nhan_vien.trang_thai %}
+          <form
+            method="post"
+            action="{% url 'gym:doi_trang_thai_tai_khoan_nhan_vien' loai_nhan_vien ma_nhan_vien %}"
+          >
+            {% csrf_token %}
+            <input type="hidden" name="hanh_dong" value="mo_khoa" />
+
+            <button class="primary-button" type="submit">
+              Mở khóa tài khoản
+            </button>
+          </form>
+        {% endif %}
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span>Tên đăng nhập</span>
+          <strong>{{ nhan_vien.tai_khoan.username }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Vai trò</span>
+          <strong>
+            {{ nhan_vien.tai_khoan.get_vai_tro_display }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Trạng thái tài khoản</span>
+
+          {% if nhan_vien.tai_khoan.is_active %}
+            <strong class="status-badge status-active">
+              Đang hoạt động
+            </strong>
+          {% else %}
+            <strong class="status-badge status-inactive">
+              Đã khóa
+            </strong>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if not nhan_vien.trang_thai and not nhan_vien.tai_khoan.is_active %}
+        <p class="form-help">
+          Cho nhân viên làm việc lại trước khi mở khóa tài khoản.
+        </p>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

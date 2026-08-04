@@ -48,10 +48,13 @@
                 Hội viên
             </a>
 
-              <span class="sidebar-link is-disabled">
+            <a
+                href="{% url 'gym:danh_sach_nhan_vien' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_nhan_vien' or request.resolver_match.url_name == 'tao_nhan_vien_moi' or request.resolver_match.url_name == 'chi_tiet_nhan_vien' or request.resolver_match.url_name == 'chinh_sua_nhan_vien' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">03</span>
                 Nhân viên
-              </span>
+            </a>
 
             <a
                 href="{% url 'gym:danh_sach_goi_tap' %}"

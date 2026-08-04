@@ -1,6 +1,6 @@
 from django import forms
 
-from gym.models import GoiTap, HoiVien
+from gym.models import GoiTap, HoiVien, HuanLuyenVien, LeTan
 
 
 class TaoHoiVienForm(forms.ModelForm):
@@ -65,6 +65,94 @@ class TaoHoiVienForm(forms.ModelForm):
                 }
             ),
         }
+
+NHAN_VIEN_FIELDS = (
+    "ho_ten",
+    "gioi_tinh",
+    "ngay_sinh",
+    "sdt",
+    "email",
+    "dia_chi",
+    "ngay_vao_lam",
+)
+
+NHAN_VIEN_LABELS = {
+    "ho_ten": "Họ và tên",
+    "gioi_tinh": "Giới tính",
+    "ngay_sinh": "Ngày sinh",
+    "sdt": "Số điện thoại",
+    "email": "Email",
+    "dia_chi": "Địa chỉ",
+    "ngay_vao_lam": "Ngày vào làm",
+}
+
+
+def _tao_widgets_nhan_vien():
+    return {
+        "ho_ten": forms.TextInput(
+            attrs={
+                "class": "form-input",
+                "placeholder": "Nhập họ và tên",
+                "autocomplete": "name",
+            }
+        ),
+        "gioi_tinh": forms.Select(
+            attrs={
+                "class": "form-select",
+            }
+        ),
+        "ngay_sinh": forms.DateInput(
+            format="%Y-%m-%d",
+            attrs={
+                "class": "form-input",
+                "type": "date",
+            },
+        ),
+        "sdt": forms.TextInput(
+            attrs={
+                "class": "form-input",
+                "placeholder": "Nhập số điện thoại",
+                "autocomplete": "tel",
+            }
+        ),
+        "email": forms.EmailInput(
+            attrs={
+                "class": "form-input",
+                "placeholder": "Nhập địa chỉ email",
+                "autocomplete": "email",
+            }
+        ),
+        "dia_chi": forms.Textarea(
+            attrs={
+                "class": "form-textarea",
+                "placeholder": "Nhập địa chỉ",
+                "rows": 3,
+            }
+        ),
+        "ngay_vao_lam": forms.DateInput(
+            format="%Y-%m-%d",
+            attrs={
+                "class": "form-input",
+                "type": "date",
+            },
+        ),
+    }
+
+
+class LeTanForm(forms.ModelForm):
+    class Meta:
+        model = LeTan
+        fields = NHAN_VIEN_FIELDS
+        labels = NHAN_VIEN_LABELS
+        widgets = _tao_widgets_nhan_vien()
+
+
+class HuanLuyenVienForm(forms.ModelForm):
+    class Meta:
+        model = HuanLuyenVien
+        fields = NHAN_VIEN_FIELDS
+        labels = NHAN_VIEN_LABELS
+        widgets = _tao_widgets_nhan_vien()
 
 class GoiTapForm(forms.ModelForm):
     thoi_han_ngay = forms.IntegerField(

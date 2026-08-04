@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {{ tieu_de_trang }} | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  {{ tieu_de_trang }}
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>{{ tieu_de_bieu_mau }}</h2>
+        <p>{{ mo_ta_bieu_mau }}</p>
+      </div>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="error-message">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+
+          {{ field }}
+
+          {% for error in field.errors %}
+            <p class="error-message">
+              {{ error }}
+            </p>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      <div class="form-actions">
+        <button class="primary-button" type="submit">
+          {{ nhan_nut_luu }}
+        </button>
+
+        {% if nhan_vien %}
+          <a
+            class="secondary-button"
+            href="{% url 'gym:chi_tiet_nhan_vien' loai_nhan_vien nhan_vien.pk %}"
+          >
+            Hủy chỉnh sửa
+          </a>
+        {% else %}
+          <a
+            class="secondary-button"
+            href="{% url 'gym:danh_sach_nhan_vien' %}"
+          >
+            Quay lại danh sách
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </section>
+{% endblock %}
