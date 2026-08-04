@@ -1,18 +1,19 @@
 {% extends "base.html" %}
 
 {% block title %}
-  Tạo đăng ký | Hệ thống quản lý phòng Gym
+  {{ tieu_de_trang }} | Hệ thống quản lý phòng Gym
 {% endblock %}
 
 {% block page_title %}
-  Tạo đăng ký gói
+  {{ tieu_de_trang }}
 {% endblock %}
 
 {% block content %}
   <section class="page-section">
     <div class="page-heading">
       <div>
-        <h2>Thông tin đăng ký và thanh toán</h2>
+        <h2>{{ tieu_de_bieu_mau }}</h2>
+        <p>{{ mo_ta_bieu_mau }}</p>
         <p>
           Hóa đơn sẽ được ghi nhận cho Lễ tân
           {{ le_tan.ma_lt }} — {{ le_tan.ho_ten }}.
@@ -47,15 +48,24 @@
 
       <div class="form-actions">
         <button class="primary-button" type="submit">
-          Lưu đăng ký và lập hóa đơn
+          {{ nhan_nut_luu }}
         </button>
 
-        <a
-          class="secondary-button"
-          href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
-        >
-          Quay lại danh sách
-        </a>
+        {% if dang_ky_goc %}
+          <a
+            class="secondary-button"
+            href="{% url 'gym:chi_tiet_dang_ky_hoa_don' dang_ky_goc.ma_dk %}"
+          >
+            Quay lại chi tiết
+          </a>
+        {% else %}
+          <a
+            class="secondary-button"
+            href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
+          >
+            Quay lại danh sách
+          </a>
+        {% endif %}
       </div>
     </form>
   </section>

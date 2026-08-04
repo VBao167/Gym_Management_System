@@ -8,11 +8,12 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from accounts.decorators import vai_tro_required
 from accounts.models import TaiKhoan
 from gym.forms import (
+    DangKyGoiVaHoaDonForm,
+    GiaHanGoiForm,
     GoiTapForm,
     HuanLuyenVienForm,
     LeTanForm,
     TaoHoiVienForm,
-    DangKyGoiVaHoaDonForm,
 )
 from gym.models import (
     DiemDanh,
@@ -34,6 +35,7 @@ from gym.services.trang_thai_hoi_vien import (
 from gym.services.dang_ky_goi import (
     tao_dang_ky_va_hoa_don,
 )
+from gym.services.gia_han_goi import gia_han_goi
 
 CAU_HINH_NHAN_VIEN = {
     "le-tan": {
@@ -693,6 +695,89 @@ def tao_dang_ky_hoa_don(request):
         {
             "form": form,
             "le_tan": le_tan,
+            "tieu_de_trang": "Tạo đăng ký gói",
+            "tieu_de_bieu_mau": (
+                "Thông tin đăng ký và thanh toán"
+            ),
+            "mo_ta_bieu_mau": (
+                "Tạo đăng ký gói mới và hóa đơn "
+                "tương ứng cho hội viên."
+            ),
+            "nhan_nut_luu": (
+                "Lưu đăng ký và lập hóa đơn"
+            ),
+        },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.LE_TAN)
+def gia_han_goi_hoi_vien(request, ma_dk):
+    le_tan = _lay_le_tan_dang_nhap(request)
+
+    dang_ky_goc = get_object_or_404(
+        DangKyGoiTap.objects.select_related(
+            "hoi_vien",
+            "goi_tap",
+        ),
+        pk=ma_dk,
+    )
+
+    form = GiaHanGoiForm(
+        request.POST or None
+    )
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            dang_ky_moi, _ = gia_han_goi(
+                hoi_vien=dang_ky_goc.hoi_vien,
+                goi_tap=form.cleaned_data["goi_tap"],
+                le_tan=le_tan,
+                phuong_thuc_thanh_toan=(
+                    form.cleaned_data[
+                        "phuong_thuc_thanh_toan"
+                    ]
+                ),
+                ghi_chu_dang_ky=(
+                    form.cleaned_data[
+                        "ghi_chu_dang_ky"
+                    ]
+                ),
+                ghi_chu_hoa_don=(
+                    form.cleaned_data[
+                        "ghi_chu_hoa_don"
+                    ]
+                ),
+            )
+        except ValidationError as error:
+            form.add_error(None, error)
+        else:
+            return redirect(
+                "gym:chi_tiet_dang_ky_hoa_don",
+                ma_dk=dang_ky_moi.ma_dk,
+            )
+
+    return render(
+        request,
+        "users/dang_ky_hoa_don/"
+        "tao_dang_ky_hoa_don.html",
+        {
+            "form": form,
+            "le_tan": le_tan,
+            "dang_ky_goc": dang_ky_goc,
+            "tieu_de_trang": "Gia hạn gói tập",
+            "tieu_de_bieu_mau": (
+                "Thông tin gia hạn và thanh toán"
+            ),
+            "mo_ta_bieu_mau": (
+                f"Gia hạn cho hội viên "
+                f"{dang_ky_goc.hoi_vien.ma_hv} — "
+                f"{dang_ky_goc.hoi_vien.ho_ten}. "
+                "Ngày bắt đầu gói mới sẽ được "
+                "hệ thống tự động tính nối tiếp."
+            ),
+            "nhan_nut_luu": (
+                "Gia hạn và lập hóa đơn"
+            ),
         },
     )
 

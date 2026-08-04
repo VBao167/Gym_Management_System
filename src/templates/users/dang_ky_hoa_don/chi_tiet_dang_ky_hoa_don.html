@@ -19,12 +19,23 @@
         </p>
       </div>
 
-      <a
-        class="secondary-button"
-        href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
-      >
-        Quay lại danh sách
-      </a>
+        <div class="form-actions">
+            {% if request.user.vai_tro == "LeTan" %}
+            <a
+                class="primary-button"
+                href="{% url 'gym:gia_han_goi_hoi_vien' dang_ky.ma_dk %}"
+            >
+                Gia hạn gói
+            </a>
+            {% endif %}
+
+            <a
+                class="secondary-button"
+                href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
+            >
+                Quay lại danh sách
+            </a>
+        </div>
     </div>
 
     <div class="detail-card">

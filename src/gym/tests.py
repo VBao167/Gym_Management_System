@@ -3356,3 +3356,262 @@ class QuanLyDangKyHoaDonTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+    def test_form_gia_han_chi_co_cac_truong_can_thiet(
+        self
+    ):
+        _, dang_ky_goc = (
+            self.tao_dang_ky_qua_giao_dien()
+        )
+        url = reverse(
+            "gym:gia_han_goi_hoi_vien",
+            args=[dang_ky_goc.ma_dk],
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            list(response.context["form"].fields),
+            [
+                "goi_tap",
+                "phuong_thuc_thanh_toan",
+                "ghi_chu_dang_ky",
+                "ghi_chu_hoa_don",
+            ],
+        )
+
+        queryset = (
+            response.context["form"]
+            .fields["goi_tap"]
+            .queryset
+        )
+        self.assertIn(
+            self.goi_dang_kinh_doanh,
+            queryset,
+        )
+        self.assertNotIn(
+            self.goi_ngung_kinh_doanh,
+            queryset,
+        )
+
+    def test_admin_va_pt_khong_duoc_truy_cap_gia_han(
+        self
+    ):
+        _, dang_ky_goc = (
+            self.tao_dang_ky_qua_giao_dien()
+        )
+        url = reverse(
+            "gym:gia_han_goi_hoi_vien",
+            args=[dang_ky_goc.ma_dk],
+        )
+
+        for tai_khoan in (
+            self.admin,
+            self.tai_khoan_pt,
+        ):
+            with self.subTest(
+                username=tai_khoan.username
+            ):
+                self.client.force_login(tai_khoan)
+                response = self.client.get(url)
+
+                self.assertEqual(
+                    response.status_code,
+                    403,
+                )
+
+    def test_le_tan_ngung_lam_viec_khong_duoc_gia_han(
+        self
+    ):
+        _, dang_ky_goc = (
+            self.tao_dang_ky_qua_giao_dien()
+        )
+        self.le_tan.trang_thai = False
+        self.le_tan.save(
+            update_fields=["trang_thai"],
+        )
+
+        response = self.client.get(
+            reverse(
+                "gym:gia_han_goi_hoi_vien",
+                args=[dang_ky_goc.ma_dk],
+            )
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_ma_dang_ky_gia_han_khong_ton_tai_tra_404(
+        self
+    ):
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.get(
+            reverse(
+                "gym:gia_han_goi_hoi_vien",
+                args=["DK999999"],
+            )
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_chi_le_tan_nhin_thay_nut_gia_han(
+        self
+    ):
+        _, dang_ky_goc = (
+            self.tao_dang_ky_qua_giao_dien()
+        )
+        url = reverse(
+            "gym:chi_tiet_dang_ky_hoa_don",
+            args=[dang_ky_goc.ma_dk],
+        )
+
+        response_le_tan = self.client.get(url)
+        self.assertContains(
+            response_le_tan,
+            "Gia hạn gói",
+        )
+
+        self.client.force_login(self.admin)
+        response_admin = self.client.get(url)
+        self.assertNotContains(
+            response_admin,
+            "Gia hạn gói",
+        )
+
+    def test_le_tan_gia_han_va_lap_hoa_don_thanh_cong(
+        self
+    ):
+        _, dang_ky_goc = (
+            self.tao_dang_ky_qua_giao_dien()
+        )
+        url = reverse(
+            "gym:gia_han_goi_hoi_vien",
+            args=[dang_ky_goc.ma_dk],
+        )
+
+        so_dang_ky_ban_dau = (
+            DangKyGoiTap.objects.count()
+        )
+        so_hoa_don_ban_dau = HoaDon.objects.count()
+
+        response = self.client.post(
+            url,
+            {
+                "goi_tap": (
+                    self.goi_dang_kinh_doanh.pk
+                ),
+                "phuong_thuc_thanh_toan": (
+                    "TienMat"
+                ),
+                "ghi_chu_dang_ky": (
+                    "Gia hạn từ giao diện kiểm thử"
+                ),
+                "ghi_chu_hoa_don": (
+                    "Hóa đơn gia hạn kiểm thử"
+                ),
+            },
+        )
+
+        self.assertEqual(
+            DangKyGoiTap.objects.count(),
+            so_dang_ky_ban_dau + 1,
+        )
+        self.assertEqual(
+            HoaDon.objects.count(),
+            so_hoa_don_ban_dau + 1,
+        )
+
+        dang_ky_moi = (
+            DangKyGoiTap.objects
+            .exclude(pk=dang_ky_goc.pk)
+            .get()
+        )
+        hoa_don_moi = dang_ky_moi.hoa_don
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "gym:chi_tiet_dang_ky_hoa_don",
+                args=[dang_ky_moi.ma_dk],
+            ),
+        )
+        self.assertEqual(
+            dang_ky_moi.hoi_vien,
+            dang_ky_goc.hoi_vien,
+        )
+        self.assertEqual(
+            dang_ky_moi.ngay_bat_dau,
+            dang_ky_goc.ngay_ket_thuc
+            + timedelta(days=1),
+        )
+        self.assertEqual(
+            dang_ky_moi.trang_thai,
+            DangKyGoiTap.TrangThai.CHUA_KICH_HOAT,
+        )
+        self.assertEqual(
+            dang_ky_moi.ghi_chu,
+            "Gia hạn từ giao diện kiểm thử",
+        )
+        self.assertEqual(
+            hoa_don_moi.le_tan,
+            self.le_tan,
+        )
+        self.assertEqual(
+            hoa_don_moi.tong_tien,
+            self.goi_dang_kinh_doanh.gia_tien,
+        )
+        self.assertEqual(
+            hoa_don_moi.phuong_thuc_thanh_toan,
+            "TienMat",
+        )
+        self.assertEqual(
+            hoa_don_moi.ghi_chu,
+            "Hóa đơn gia hạn kiểm thử",
+        )
+
+    def test_goi_ngung_kinh_doanh_khong_duoc_gia_han(
+        self
+    ):
+        _, dang_ky_goc = (
+            self.tao_dang_ky_qua_giao_dien()
+        )
+        url = reverse(
+            "gym:gia_han_goi_hoi_vien",
+            args=[dang_ky_goc.ma_dk],
+        )
+
+        so_dang_ky_ban_dau = (
+            DangKyGoiTap.objects.count()
+        )
+        so_hoa_don_ban_dau = HoaDon.objects.count()
+
+        response = self.client.post(
+            url,
+            {
+                "goi_tap": (
+                    self.goi_ngung_kinh_doanh.pk
+                ),
+                "phuong_thuc_thanh_toan": (
+                    "TienMat"
+                ),
+                "ghi_chu_dang_ky": "",
+                "ghi_chu_hoa_don": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "goi_tap",
+            response.context["form"].errors,
+        )
+        self.assertEqual(
+            DangKyGoiTap.objects.count(),
+            so_dang_ky_ban_dau,
+        )
+        self.assertEqual(
+            HoaDon.objects.count(),
+            so_hoa_don_ban_dau,
+        )

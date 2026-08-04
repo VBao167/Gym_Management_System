@@ -380,3 +380,13 @@ class DangKyGoiVaHoaDonForm(forms.Form):
             ) from error
 
         return cleaned_data
+
+class GiaHanGoiForm(DangKyGoiVaHoaDonForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields.pop("hoi_vien")
+        self.fields.pop("ngay_bat_dau")
+
+    def clean(self):
+        return forms.Form.clean(self)

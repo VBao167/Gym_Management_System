@@ -129,6 +129,11 @@ urlpatterns = [
         name="tao_dang_ky_hoa_don",
     ),
     path(
+        "dang-ky-hoa-don/<str:ma_dk>/gia-han/",
+        views.gia_han_goi_hoi_vien,
+        name="gia_han_goi_hoi_vien",
+    ),
+    path(
         "dang-ky-hoa-don/<str:ma_dk>/",
         views.chi_tiet_dang_ky_hoa_don,
         name="chi_tiet_dang_ky_hoa_don",
