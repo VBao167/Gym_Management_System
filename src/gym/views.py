@@ -96,8 +96,14 @@ def trang_quan_tri(request):
     )
 
 
-@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+@vai_tro_required(
+    TaiKhoan.VaiTro.ADMIN,
+    TaiKhoan.VaiTro.LE_TAN,
+)
 def danh_sach_hoi_vien(request):
+    if request.user.vai_tro == TaiKhoan.VaiTro.LE_TAN:
+        _lay_le_tan_dang_nhap(request)
+
     cap_nhat_trang_thai_toan_bo()
 
     cac_hoi_vien = (
@@ -115,8 +121,14 @@ def danh_sach_hoi_vien(request):
     )
 
 
-@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+@vai_tro_required(
+    TaiKhoan.VaiTro.ADMIN,
+    TaiKhoan.VaiTro.LE_TAN,
+)
 def tao_hoi_vien_moi(request):
+    if request.user.vai_tro == TaiKhoan.VaiTro.LE_TAN:
+        _lay_le_tan_dang_nhap(request)
+
     form = TaoHoiVienForm(
         request.POST or None
     )
@@ -148,8 +160,14 @@ def tao_hoi_vien_moi(request):
     )
 
 
-@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+@vai_tro_required(
+    TaiKhoan.VaiTro.ADMIN,
+    TaiKhoan.VaiTro.LE_TAN,
+)
 def chinh_sua_hoi_vien(request, ma_hv):
+    if request.user.vai_tro == TaiKhoan.VaiTro.LE_TAN:
+        _lay_le_tan_dang_nhap(request)
+
     hoi_vien = get_object_or_404(
         HoiVien,
         pk=ma_hv,
@@ -218,8 +236,14 @@ def doi_trang_thai_tai_khoan_hoi_vien(request, ma_hv):
     )
 
 
-@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+@vai_tro_required(
+    TaiKhoan.VaiTro.ADMIN,
+    TaiKhoan.VaiTro.LE_TAN,
+)
 def chi_tiet_hoi_vien(request, ma_hv):
+    if request.user.vai_tro == TaiKhoan.VaiTro.LE_TAN:
+        _lay_le_tan_dang_nhap(request)
+
     cap_nhat_trang_thai_toan_bo()
 
     hoi_vien = get_object_or_404(

@@ -1304,10 +1304,25 @@ class DanhSachHoiVienTests(TestCase):
             vai_tro=TaiKhoan.VaiTro.ADMIN,
         )
 
-        self.tai_khoan_le_tan = TaiKhoan.objects.create_user(
-            username="le_tan_khong_co_quyen",
+        self.le_tan = tao_le_tan(
+            ho_ten="Lễ tân xem danh sách hội viên",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 3, 3),
+            sdt="0951000003",
+            email="le.tan.danh.sach@example.com",
+            dia_chi="TP.HCM",
+        )
+        self.tai_khoan_le_tan_khong_co_ho_so = (
+            TaiKhoan.objects.create_user(
+                username="le_tan_khong_co_ho_so",
+                password="1",
+                vai_tro=TaiKhoan.VaiTro.LE_TAN,
+            )
+        )
+        self.tai_khoan_pt = TaiKhoan.objects.create_user(
+            username="pt_khong_duoc_xem_hoi_vien",
             password="1",
-            vai_tro=TaiKhoan.VaiTro.LE_TAN,
+            vai_tro=TaiKhoan.VaiTro.PT,
         )
 
         self.hoi_vien_1 = tao_hoi_vien(
@@ -1374,8 +1389,35 @@ class DanhSachHoiVienTests(TestCase):
             "Chưa có hội viên trong hệ thống.",
         )
 
-    def test_tai_khoan_khong_phai_admin_bi_tu_choi(self):
-        self.client.force_login(self.tai_khoan_le_tan)
+    def test_le_tan_xem_duoc_danh_sach_hoi_vien(self):
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.get(
+            reverse("gym:danh_sach_hoi_vien")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Nguyễn Văn An")
+        self.assertContains(response, "Trần Thị Bình")
+        self.assertContains(response, "Thêm hội viên")
+
+    def test_le_tan_khong_co_ho_so_bi_tu_choi(self):
+        self.client.force_login(
+            self.tai_khoan_le_tan_khong_co_ho_so
+        )
+
+        response = self.client.get(
+            reverse("gym:danh_sach_hoi_vien")
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_pt_khong_duoc_xem_danh_sach_hoi_vien(self):
+        self.client.force_login(
+            self.tai_khoan_pt
+        )
 
         response = self.client.get(
             reverse("gym:danh_sach_hoi_vien")
@@ -1404,11 +1446,81 @@ class TaoHoiVienTuGiaoDienTests(TestCase):
             vai_tro=TaiKhoan.VaiTro.ADMIN,
         )
 
-        self.le_tan = TaiKhoan.objects.create_user(
-            username="le_tan_khong_duoc_tao_hoi_vien",
-            password="1",
-            vai_tro=TaiKhoan.VaiTro.LE_TAN,
+        self.le_tan = tao_le_tan(
+            ho_ten="Lễ tân tạo hội viên",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 2, 2),
+            sdt="0961000002",
+            email="le.tan.tao.hoi.vien@example.com",
+            dia_chi="TP.HCM",
         )
+
+        self.tai_khoan_pt = TaiKhoan.objects.create_user(
+            username="pt_khong_duoc_tao_hoi_vien",
+            password="1",
+            vai_tro=TaiKhoan.VaiTro.PT,
+        )
+
+        self.url = reverse("gym:tao_hoi_vien_moi")
+
+        self.du_lieu_hop_le = {
+            "ho_ten": "Nguyễn Minh Khang",
+            "gioi_tinh": "Nam",
+            "ngay_sinh": "2002-01-01",
+            "sdt": "0961000001",
+            "email": "minh.khang@example.com",
+            "dia_chi": "TP.HCM",
+        }
+
+    def test_le_tan_tao_hoi_vien_kem_tai_khoan_thanh_cong(
+        self
+    ):
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.post(
+            self.url,
+            self.du_lieu_hop_le,
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("gym:danh_sach_hoi_vien"),
+        )
+        self.assertEqual(HoiVien.objects.count(), 1)
+
+        hoi_vien = HoiVien.objects.select_related(
+            "tai_khoan"
+        ).get()
+
+        self.assertEqual(
+            hoi_vien.ho_ten,
+            "Nguyễn Minh Khang",
+        )
+        self.assertEqual(
+            hoi_vien.tai_khoan.vai_tro,
+            TaiKhoan.VaiTro.HOI_VIEN,
+        )
+        self.assertTrue(
+            hoi_vien.tai_khoan.is_active
+        )
+
+    def test_le_tan_ngung_lam_viec_khong_duoc_tao_hoi_vien(
+        self
+    ):
+        self.le_tan.trang_thai = False
+        self.le_tan.save(
+            update_fields=["trang_thai"],
+        )
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(HoiVien.objects.count(), 0)
 
         self.url = reverse("gym:tao_hoi_vien_moi")
 
@@ -1495,8 +1607,10 @@ class TaoHoiVienTuGiaoDienTests(TestCase):
         )
         self.assertEqual(HoiVien.objects.count(), 0)
 
-    def test_tai_khoan_khong_phai_admin_bi_tu_choi(self):
-        self.client.force_login(self.le_tan)
+    def test_pt_khong_duoc_tao_hoi_vien(self):
+        self.client.force_login(
+            self.tai_khoan_pt
+        )
 
         response = self.client.get(self.url)
 
@@ -1510,10 +1624,19 @@ class ChiTietHoiVienTests(TestCase):
             vai_tro=TaiKhoan.VaiTro.ADMIN,
         )
 
-        self.le_tan = TaiKhoan.objects.create_user(
-            username="le_tan_khong_duoc_xem_chi_tiet",
+        self.le_tan = tao_le_tan(
+            ho_ten="Lễ tân xem chi tiết hội viên",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 3, 3),
+            sdt="0961000003",
+            email="le.tan.chi.tiet@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.tai_khoan_pt = TaiKhoan.objects.create_user(
+            username="pt_khong_duoc_xem_chi_tiet_hoi_vien",
             password="1",
-            vai_tro=TaiKhoan.VaiTro.LE_TAN,
+            vai_tro=TaiKhoan.VaiTro.PT,
         )
 
         self.hoi_vien = tao_hoi_vien(
@@ -1551,6 +1674,10 @@ class ChiTietHoiVienTests(TestCase):
             response,
             self.hoi_vien.tai_khoan.username,
         )
+        self.assertContains(
+            response,
+            "Khóa tài khoản",
+        )
 
     def test_chi_tiet_dong_bo_trang_thai_truoc_khi_hien_thi(self):
         self.client.force_login(self.admin)
@@ -1575,12 +1702,43 @@ class ChiTietHoiVienTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
-    def test_tai_khoan_khong_phai_admin_bi_tu_choi(self):
-        self.client.force_login(self.le_tan)
+    def test_pt_khong_duoc_xem_chi_tiet_hoi_vien(
+        self
+    ):
+        self.client.force_login(
+            self.tai_khoan_pt
+        )
 
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 403)
+
+    def test_le_tan_xem_duoc_chi_tiet_nhung_khong_duoc_khoa(
+        self
+    ):
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "Nguyễn Minh Khang",
+        )
+        self.assertContains(
+            response,
+            "Chỉnh sửa",
+        )
+        self.assertNotContains(
+            response,
+            "Khóa tài khoản",
+        )
+        self.assertNotContains(
+            response,
+            "Mở khóa tài khoản",
+        )
 
 class ChinhSuaHoiVienTests(TestCase):
     def setUp(self):
@@ -1590,10 +1748,19 @@ class ChinhSuaHoiVienTests(TestCase):
             vai_tro=TaiKhoan.VaiTro.ADMIN,
         )
 
-        self.le_tan = TaiKhoan.objects.create_user(
-            username="le_tan_khong_duoc_chinh_sua",
+        self.le_tan = tao_le_tan(
+            ho_ten="Lễ tân chỉnh sửa hội viên",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 4, 4),
+            sdt="0962000002",
+            email="le.tan.chinh.sua@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        self.tai_khoan_pt = TaiKhoan.objects.create_user(
+            username="pt_khong_duoc_chinh_sua_hoi_vien",
             password="1",
-            vai_tro=TaiKhoan.VaiTro.LE_TAN,
+            vai_tro=TaiKhoan.VaiTro.PT,
         )
 
         self.hoi_vien = tao_hoi_vien(
@@ -1728,12 +1895,73 @@ class ChinhSuaHoiVienTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
-    def test_tai_khoan_khong_phai_admin_bi_tu_choi(self):
-        self.client.force_login(self.le_tan)
+    def test_pt_khong_duoc_chinh_sua_hoi_vien(
+        self
+    ):
+        self.client.force_login(
+            self.tai_khoan_pt
+        )
 
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 403)
+
+    def test_le_tan_chinh_sua_hoi_vien_thanh_cong(
+        self
+    ):
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        ma_hv_ban_dau = self.hoi_vien.ma_hv
+        ma_tk_ban_dau = self.hoi_vien.tai_khoan_id
+        username_ban_dau = (
+            self.hoi_vien.tai_khoan.username
+        )
+        trang_thai_ban_dau = (
+            self.hoi_vien.trang_thai
+        )
+
+        response = self.client.post(
+            self.url,
+            self.du_lieu_cap_nhat,
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "gym:chi_tiet_hoi_vien",
+                args=[ma_hv_ban_dau],
+            ),
+        )
+
+        self.hoi_vien.refresh_from_db()
+        self.hoi_vien.tai_khoan.refresh_from_db()
+
+        self.assertEqual(
+            self.hoi_vien.sdt,
+            "0962000010",
+        )
+        self.assertEqual(
+            self.hoi_vien.dia_chi,
+            "Bình Chánh, TP.HCM",
+        )
+        self.assertEqual(
+            self.hoi_vien.ma_hv,
+            ma_hv_ban_dau,
+        )
+        self.assertEqual(
+            self.hoi_vien.tai_khoan_id,
+            ma_tk_ban_dau,
+        )
+        self.assertEqual(
+            self.hoi_vien.tai_khoan.username,
+            username_ban_dau,
+        )
+        self.assertEqual(
+            self.hoi_vien.trang_thai,
+            trang_thai_ban_dau,
+        )
 
 class TrangThaiTaiKhoanHoiVienTests(TestCase):
     def setUp(self):
@@ -1856,7 +2084,9 @@ class TrangThaiTaiKhoanHoiVienTests(TestCase):
             self.hoi_vien.tai_khoan.is_active
         )
 
-    def test_tai_khoan_khong_phai_admin_bi_tu_choi(self):
+    def test_tai_khoan_khong_phai_admin_bi_tu_choi(
+        self
+    ):
         self.client.force_login(self.le_tan)
 
         response = self.client.post(
@@ -1869,7 +2099,6 @@ class TrangThaiTaiKhoanHoiVienTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
         self.hoi_vien.tai_khoan.refresh_from_db()
-
         self.assertTrue(
             self.hoi_vien.tai_khoan.is_active
         )

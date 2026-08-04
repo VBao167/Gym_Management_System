@@ -12,32 +12,32 @@ urlpatterns = [
         name="trang_quan_tri",
     ),
 
-    # Quản lý Hội viên
+    # Quản lý Hội viên dành cho Admin và Lễ tân
     path(
-        "quan-tri/hoi-vien/",
+        "quan-ly-hoi-vien/",
         views.danh_sach_hoi_vien,
         name="danh_sach_hoi_vien",
     ),
     path(
-        "quan-tri/hoi-vien/them-moi/",
+        "quan-ly-hoi-vien/them-moi/",
         views.tao_hoi_vien_moi,
         name="tao_hoi_vien_moi",
     ),
     path(
-        "quan-tri/hoi-vien/<str:ma_hv>/chinh-sua/",
+        "quan-ly-hoi-vien/<str:ma_hv>/chinh-sua/",
         views.chinh_sua_hoi_vien,
         name="chinh_sua_hoi_vien",
     ),
     path(
         (
-            "quan-tri/hoi-vien/<str:ma_hv>/"
+            "quan-ly-hoi-vien/<str:ma_hv>/"
             "doi-trang-thai-tai-khoan/"
         ),
         views.doi_trang_thai_tai_khoan_hoi_vien,
         name="doi_trang_thai_tai_khoan_hoi_vien",
     ),
     path(
-        "quan-tri/hoi-vien/<str:ma_hv>/",
+        "quan-ly-hoi-vien/<str:ma_hv>/",
         views.chi_tiet_hoi_vien,
         name="chi_tiet_hoi_vien",
     ),
