@@ -9,6 +9,7 @@ from accounts.decorators import vai_tro_required
 from accounts.models import TaiKhoan
 from gym.forms import (
     DangKyGoiVaHoaDonForm,
+    DiemDanhForm,
     GiaHanGoiForm,
     GoiTapForm,
     HuanLuyenVienForm,
@@ -36,6 +37,7 @@ from gym.services.dang_ky_goi import (
     tao_dang_ky_va_hoa_don,
 )
 from gym.services.gia_han_goi import gia_han_goi
+from gym.services.diem_danh import tao_diem_danh
 
 CAU_HINH_NHAN_VIEN = {
     "le-tan": {
@@ -835,6 +837,91 @@ def chi_tiet_dang_ky_hoa_don(request, ma_dk):
         {
             "dang_ky": dang_ky,
             "hoa_don": hoa_don,
+        },
+    )
+
+
+@vai_tro_required(
+    TaiKhoan.VaiTro.ADMIN,
+    TaiKhoan.VaiTro.LE_TAN,
+)
+def danh_sach_diem_danh(request):
+    if request.user.vai_tro == TaiKhoan.VaiTro.LE_TAN:
+        _lay_le_tan_dang_nhap(request)
+
+    cap_nhat_trang_thai_toan_bo()
+
+    cac_diem_danh = (
+        DiemDanh.objects
+        .select_related(
+            "hoi_vien",
+            "le_tan",
+        )
+        .order_by(
+            "-thoi_gian_diem_danh",
+            "ma_dd",
+        )
+    )
+
+    return render(
+        request,
+        "gym/diem_danh/danh_sach_diem_danh.html",
+        {
+            "cac_diem_danh": cac_diem_danh,
+        },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.LE_TAN)
+def tao_diem_danh_moi(request):
+    le_tan = _lay_le_tan_dang_nhap(request)
+
+    cap_nhat_trang_thai_toan_bo()
+
+    form = DiemDanhForm(
+        request.POST or None
+    )
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            tao_diem_danh(
+                hoi_vien=(
+                    form.cleaned_data["hoi_vien"]
+                ),
+                le_tan=le_tan,
+                ghi_chu=(
+                    form.cleaned_data["ghi_chu"]
+                ),
+            )
+        except ValidationError as error:
+            if hasattr(error, "error_dict"):
+                for ten_truong, cac_loi in (
+                    error.error_dict.items()
+                ):
+                    truong_form = (
+                        ten_truong
+                        if ten_truong in form.fields
+                        else None
+                    )
+
+                    for loi in cac_loi:
+                        form.add_error(
+                            truong_form,
+                            loi,
+                        )
+            else:
+                form.add_error(None, error)
+        else:
+            return redirect(
+                "gym:danh_sach_diem_danh"
+            )
+
+    return render(
+        request,
+        "gym/diem_danh/tao_diem_danh.html",
+        {
+            "form": form,
+            "le_tan": le_tan,
         },
     )
 

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Điểm danh Hội viên | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Điểm danh Hội viên
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Ghi nhận lượt điểm danh</h2>
+
+        <p>
+          Chọn Hội viên đang có quyền sử dụng
+          phòng gym để ghi nhận thời gian vào tập.
+        </p>
+
+        <p>
+          Lễ tân thực hiện:
+          {{ le_tan.ma_lt }} — {{ le_tan.ho_ten }}.
+        </p>
+      </div>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="error-message">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+
+          {{ field }}
+
+          {% for error in field.errors %}
+            <p class="error-message">
+              {{ error }}
+            </p>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      <div class="form-actions">
+        <button class="primary-button" type="submit">
+          Xác nhận điểm danh
+        </button>
+
+        <a
+          class="secondary-button"
+          href="{% url 'gym:danh_sach_diem_danh' %}"
+        >
+          Quay lại danh sách
+        </a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Điểm danh | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Quản lý điểm danh
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Lịch sử điểm danh</h2>
+
+        <p>
+          Theo dõi thời gian vào phòng gym của
+          các Hội viên trong hệ thống.
+        </p>
+      </div>
+
+      {% if request.user.vai_tro == "LeTan" %}
+        <a
+          class="primary-button"
+          href="{% url 'gym:tao_diem_danh_moi' %}"
+        >
+          Điểm danh Hội viên
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã điểm danh</th>
+            <th>Hội viên</th>
+            <th>Thời gian</th>
+            <th>Lễ tân thực hiện</th>
+            <th>Ghi chú</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for diem_danh in cac_diem_danh %}
+            <tr>
+              <td>
+                <strong>{{ diem_danh.ma_dd }}</strong>
+              </td>
+
+              <td>
+                {{ diem_danh.hoi_vien.ma_hv }}
+                — {{ diem_danh.hoi_vien.ho_ten }}
+              </td>
+
+              <td>
+                {{ diem_danh.thoi_gian_diem_danh|date:"d/m/Y H:i" }}
+              </td>
+
+              <td>
+                {{ diem_danh.le_tan.ma_lt }}
+                — {{ diem_danh.le_tan.ho_ten }}
+              </td>
+
+              <td>
+                {% if diem_danh.ghi_chu %}
+                  {{ diem_danh.ghi_chu }}
+                {% else %}
+                  Không có
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="empty-state">
+                Chưa có lượt điểm danh trong hệ thống.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

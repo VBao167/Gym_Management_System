@@ -77,10 +77,13 @@
                 Lịch tập PT
               </span>
 
-              <span class="sidebar-link is-disabled">
+            <a
+                href="{% url 'gym:danh_sach_diem_danh' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_diem_danh' or request.resolver_match.url_name == 'tao_diem_danh_moi' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">07</span>
                 Điểm danh
-              </span>
+            </a>
 
               <span class="sidebar-link is-disabled">
                 <span class="sidebar-icon">08</span>
@@ -114,10 +117,13 @@
                 Đăng ký gói
             </a>
 
-              <span class="sidebar-link is-disabled">
+              <a
+                href="{% url 'gym:danh_sach_diem_danh' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_diem_danh' or request.resolver_match.url_name == 'tao_diem_danh_moi' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">04</span>
                 Điểm danh
-              </span>
+            </a>
 
               <span class="sidebar-link is-disabled">
                 <span class="sidebar-icon">05</span>

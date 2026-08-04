@@ -390,3 +390,39 @@ class GiaHanGoiForm(DangKyGoiVaHoaDonForm):
 
     def clean(self):
         return forms.Form.clean(self)
+
+class DiemDanhForm(forms.Form):
+    hoi_vien = forms.ModelChoiceField(
+        queryset=HoiVien.objects.none(),
+        label="Hội viên",
+        empty_label="Chọn hội viên",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select",
+            }
+        ),
+    )
+
+    ghi_chu = forms.CharField(
+        required=False,
+        max_length=255,
+        label="Ghi chú",
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-textarea",
+                "placeholder": (
+                    "Nhập ghi chú điểm danh nếu có"
+                ),
+                "rows": 3,
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["hoi_vien"].queryset = (
+            HoiVien.objects.filter(
+                trang_thai=True,
+            ).order_by("ma_hv")
+        )

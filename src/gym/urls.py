@@ -139,6 +139,18 @@ urlpatterns = [
         name="chi_tiet_dang_ky_hoa_don",
     ),
 
+    # Quản lý điểm danh
+    path(
+        "diem-danh/",
+        views.danh_sach_diem_danh,
+        name="danh_sach_diem_danh",
+    ),
+    path(
+        "diem-danh/them-moi/",
+        views.tao_diem_danh_moi,
+        name="tao_diem_danh_moi",
+    ),
+
     # Trang chính theo vai trò
     path(
         "le-tan/",
