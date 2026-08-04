@@ -117,6 +117,23 @@ urlpatterns = [
         name="doi_trang_thai_goi_tap",
     ),
 
+    # Đăng ký gói và hóa đơn
+    path(
+        "dang-ky-hoa-don/",
+        views.danh_sach_dang_ky_hoa_don,
+        name="danh_sach_dang_ky_hoa_don",
+    ),
+    path(
+        "dang-ky-hoa-don/them-moi/",
+        views.tao_dang_ky_hoa_don,
+        name="tao_dang_ky_hoa_don",
+    ),
+    path(
+        "dang-ky-hoa-don/<str:ma_dk>/",
+        views.chi_tiet_dang_ky_hoa_don,
+        name="chi_tiet_dang_ky_hoa_don",
+    ),
+
     # Trang chính theo vai trò
     path(
         "le-tan/",

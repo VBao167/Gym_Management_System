@@ -1,6 +1,15 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
-from gym.models import GoiTap, HoiVien, HuanLuyenVien, LeTan
+from gym.models import (
+    DangKyGoiTap,
+    GoiTap,
+    HoaDon,
+    HoiVien,
+    HuanLuyenVien,
+    LeTan,
+)
 
 
 class TaoHoiVienForm(forms.ModelForm):
@@ -248,5 +257,126 @@ class GoiTapForm(forms.ModelForm):
                 )
         else:
             cleaned_data["so_buoi_pt"] = 0
+
+        return cleaned_data
+
+class DangKyGoiVaHoaDonForm(forms.Form):
+    hoi_vien = forms.ModelChoiceField(
+        queryset=HoiVien.objects.none(),
+        label="Hội viên",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select",
+            }
+        ),
+    )
+
+    goi_tap = forms.ModelChoiceField(
+        queryset=GoiTap.objects.none(),
+        label="Gói tập",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select",
+            }
+        ),
+    )
+
+    ngay_bat_dau = forms.DateField(
+        label="Ngày bắt đầu",
+        widget=forms.DateInput(
+            format="%Y-%m-%d",
+            attrs={
+                "class": "form-input",
+                "type": "date",
+            },
+        ),
+    )
+
+    phuong_thuc_thanh_toan = forms.ChoiceField(
+        choices=HoaDon.PhuongThucThanhToan.choices,
+        label="Phương thức thanh toán",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select",
+            }
+        ),
+    )
+
+    ghi_chu_dang_ky = forms.CharField(
+        required=False,
+        max_length=255,
+        label="Ghi chú đăng ký",
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-textarea",
+                "placeholder": "Nhập ghi chú đăng ký nếu có",
+                "rows": 3,
+            }
+        ),
+    )
+
+    ghi_chu_hoa_don = forms.CharField(
+        required=False,
+        max_length=255,
+        label="Ghi chú hóa đơn",
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-textarea",
+                "placeholder": "Nhập ghi chú hóa đơn nếu có",
+                "rows": 3,
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["hoi_vien"].queryset = (
+            HoiVien.objects.order_by("ma_hv")
+        )
+
+        self.fields["goi_tap"].queryset = (
+            GoiTap.objects.filter(
+                trang_thai=True,
+            ).order_by("ma_goi")
+        )
+
+        self.fields["ngay_bat_dau"].initial = (
+            timezone.localdate()
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        hoi_vien = cleaned_data.get("hoi_vien")
+        goi_tap = cleaned_data.get("goi_tap")
+        ngay_bat_dau = cleaned_data.get("ngay_bat_dau")
+        ghi_chu = cleaned_data.get(
+            "ghi_chu_dang_ky",
+            "",
+        )
+
+        if not all(
+            (
+                hoi_vien,
+                goi_tap,
+                ngay_bat_dau,
+            )
+        ):
+            return cleaned_data
+
+        dang_ky_kiem_tra = DangKyGoiTap(
+            hoi_vien=hoi_vien,
+            goi_tap=goi_tap,
+            ngay_bat_dau=ngay_bat_dau,
+            ghi_chu=ghi_chu,
+        )
+
+        try:
+            dang_ky_kiem_tra.full_clean()
+        except ValidationError as error:
+            raise forms.ValidationError(
+                error.messages
+            ) from error
 
         return cleaned_data

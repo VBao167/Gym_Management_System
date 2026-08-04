@@ -64,10 +64,13 @@
                 Gói tập
             </a>
 
-              <span class="sidebar-link is-disabled">
+            <a
+                href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_dang_ky_hoa_don' or request.resolver_match.url_name == 'tao_dang_ky_hoa_don' or request.resolver_match.url_name == 'chi_tiet_dang_ky_hoa_don' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">05</span>
                 Đăng ký và hóa đơn
-              </span>
+            </a>
 
               <span class="sidebar-link is-disabled">
                 <span class="sidebar-icon">06</span>
@@ -87,23 +90,26 @@
             {% elif request.user.vai_tro == "LeTan" %}
               <p class="sidebar-heading">KHU VỰC LỄ TÂN</p>
 
-              <a
+            <a
                 href="{% url 'gym:trang_le_tan' %}"
-                class="sidebar-link is-active"
-              >
+                class="sidebar-link{% if request.resolver_match.url_name == 'trang_le_tan' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">01</span>
                 Trang chính
-              </a>
+            </a>
 
               <span class="sidebar-link is-disabled">
                 <span class="sidebar-icon">02</span>
                 Hội viên
               </span>
 
-              <span class="sidebar-link is-disabled">
+            <a
+                href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_dang_ky_hoa_don' or request.resolver_match.url_name == 'tao_dang_ky_hoa_don' or request.resolver_match.url_name == 'chi_tiet_dang_ky_hoa_don' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">03</span>
                 Đăng ký gói
-              </span>
+            </a>
 
               <span class="sidebar-link is-disabled">
                 <span class="sidebar-icon">04</span>

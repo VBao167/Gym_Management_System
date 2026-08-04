@@ -3,6 +3,7 @@ from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.core.exceptions import PermissionDenied, ValidationError
 
 from accounts.decorators import vai_tro_required
 from accounts.models import TaiKhoan
@@ -11,6 +12,7 @@ from gym.forms import (
     HuanLuyenVienForm,
     LeTanForm,
     TaoHoiVienForm,
+    DangKyGoiVaHoaDonForm,
 )
 from gym.models import (
     DiemDanh,
@@ -18,6 +20,8 @@ from gym.models import (
     HoiVien,
     HuanLuyenVien,
     LeTan,
+    DangKyGoiTap,
+    HoaDon,
 )
 from gym.services.nguoi_dung import (
     tao_hoi_vien_tu_doi_tuong,
@@ -26,6 +30,9 @@ from gym.services.nguoi_dung import (
 )
 from gym.services.trang_thai_hoi_vien import (
     cap_nhat_trang_thai_toan_bo,
+)
+from gym.services.dang_ky_goi import (
+    tao_dang_ky_va_hoa_don,
 )
 
 CAU_HINH_NHAN_VIEN = {
@@ -588,6 +595,138 @@ def doi_trang_thai_tai_khoan_nhan_vien(
         "gym:chi_tiet_nhan_vien",
         loai_nhan_vien=loai_nhan_vien,
         ma_nhan_vien=ma_nhan_vien,
+    )
+
+
+def _lay_le_tan_dang_nhap(request):
+    try:
+        le_tan = request.user.ho_so_le_tan
+    except LeTan.DoesNotExist as error:
+        raise PermissionDenied(
+            "Tài khoản không có hồ sơ Lễ tân."
+        ) from error
+
+    if not le_tan.trang_thai:
+        raise PermissionDenied(
+            "Lễ tân đã ngừng làm việc."
+        )
+
+    return le_tan
+
+
+@vai_tro_required(
+    TaiKhoan.VaiTro.ADMIN,
+    TaiKhoan.VaiTro.LE_TAN,
+)
+def danh_sach_dang_ky_hoa_don(request):
+    cap_nhat_trang_thai_toan_bo()
+
+    cac_dang_ky = (
+        DangKyGoiTap.objects
+        .select_related(
+            "hoi_vien",
+            "goi_tap",
+            "hoa_don",
+            "hoa_don__le_tan",
+        )
+        .order_by(
+            "-ngay_dang_ky",
+            "ma_dk",
+        )
+    )
+
+    return render(
+        request,
+        "users/dang_ky_hoa_don/"
+        "danh_sach_dang_ky_hoa_don.html",
+        {
+            "cac_dang_ky": cac_dang_ky,
+        },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.LE_TAN)
+def tao_dang_ky_hoa_don(request):
+    le_tan = _lay_le_tan_dang_nhap(request)
+
+    form = DangKyGoiVaHoaDonForm(
+        request.POST or None
+    )
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            dang_ky, _ = tao_dang_ky_va_hoa_don(
+                hoi_vien=form.cleaned_data["hoi_vien"],
+                goi_tap=form.cleaned_data["goi_tap"],
+                le_tan=le_tan,
+                ngay_bat_dau=(
+                    form.cleaned_data["ngay_bat_dau"]
+                ),
+                phuong_thuc_thanh_toan=(
+                    form.cleaned_data[
+                        "phuong_thuc_thanh_toan"
+                    ]
+                ),
+                ghi_chu_dang_ky=(
+                    form.cleaned_data[
+                        "ghi_chu_dang_ky"
+                    ]
+                ),
+                ghi_chu_hoa_don=(
+                    form.cleaned_data[
+                        "ghi_chu_hoa_don"
+                    ]
+                ),
+            )
+        except ValidationError as error:
+            form.add_error(None, error)
+        else:
+            return redirect(
+                "gym:chi_tiet_dang_ky_hoa_don",
+                ma_dk=dang_ky.ma_dk,
+            )
+
+    return render(
+        request,
+        "users/dang_ky_hoa_don/"
+        "tao_dang_ky_hoa_don.html",
+        {
+            "form": form,
+            "le_tan": le_tan,
+        },
+    )
+
+
+@vai_tro_required(
+    TaiKhoan.VaiTro.ADMIN,
+    TaiKhoan.VaiTro.LE_TAN,
+)
+def chi_tiet_dang_ky_hoa_don(request, ma_dk):
+    cap_nhat_trang_thai_toan_bo()
+
+    dang_ky = get_object_or_404(
+        DangKyGoiTap.objects.select_related(
+            "hoi_vien",
+            "goi_tap",
+            "hoa_don",
+            "hoa_don__le_tan",
+        ),
+        pk=ma_dk,
+    )
+
+    try:
+        hoa_don = dang_ky.hoa_don
+    except HoaDon.DoesNotExist:
+        hoa_don = None
+
+    return render(
+        request,
+        "users/dang_ky_hoa_don/"
+        "chi_tiet_dang_ky_hoa_don.html",
+        {
+            "dang_ky": dang_ky,
+            "hoa_don": hoa_don,
+        },
     )
 
 

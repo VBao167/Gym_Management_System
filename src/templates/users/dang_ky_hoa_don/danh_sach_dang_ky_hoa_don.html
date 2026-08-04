@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Đăng ký và hóa đơn | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Đăng ký và hóa đơn
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Danh sách đăng ký gói</h2>
+        <p>
+          Theo dõi gói tập, thời hạn sử dụng
+          và hóa đơn tương ứng của Hội viên.
+        </p>
+      </div>
+
+      {% if request.user.vai_tro == "LeTan" %}
+        <a
+          class="primary-button"
+          href="{% url 'gym:tao_dang_ky_hoa_don' %}"
+        >
+          Tạo đăng ký
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã đăng ký</th>
+            <th>Hội viên</th>
+            <th>Gói tập</th>
+            <th>Ngày bắt đầu</th>
+            <th>Ngày kết thúc</th>
+            <th>Trạng thái</th>
+            <th>Hóa đơn</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for dang_ky in cac_dang_ky %}
+            <tr>
+              <td>
+                <strong>{{ dang_ky.ma_dk }}</strong>
+              </td>
+
+              <td>
+                {{ dang_ky.hoi_vien.ma_hv }}
+                — {{ dang_ky.hoi_vien.ho_ten }}
+              </td>
+
+              <td>{{ dang_ky.goi_tap.ten_goi }}</td>
+
+              <td>
+                {{ dang_ky.ngay_bat_dau|date:"d/m/Y" }}
+              </td>
+
+              <td>
+                {{ dang_ky.ngay_ket_thuc|date:"d/m/Y" }}
+              </td>
+
+              <td>
+                {% if dang_ky.trang_thai == "HoatDong" %}
+                  <span class="status-badge status-active">
+                    {{ dang_ky.get_trang_thai_display }}
+                  </span>
+                {% else %}
+                  <span class="status-badge status-inactive">
+                    {{ dang_ky.get_trang_thai_display }}
+                  </span>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if dang_ky.hoa_don %}
+                  {{ dang_ky.hoa_don.ma_hd }}
+                {% else %}
+                  Không có
+                {% endif %}
+              </td>
+
+              <td>
+                <a
+                  class="table-action-link"
+                  href="{% url 'gym:chi_tiet_dang_ky_hoa_don' dang_ky.ma_dk %}"
+                >
+                  Xem chi tiết
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="empty-state">
+                Chưa có đăng ký gói trong hệ thống.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}
