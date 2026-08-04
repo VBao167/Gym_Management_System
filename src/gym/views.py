@@ -91,7 +91,7 @@ def trang_quan_tri(request):
 
     return render(
         request,
-        "users/quan_tri.html",
+        "gym/trang_chu/quan_tri.html",
         context,
     )
 
@@ -114,7 +114,7 @@ def danh_sach_hoi_vien(request):
 
     return render(
         request,
-        "users/quan_tri/danh_sach_hoi_vien.html",
+        "gym/hoi_vien/danh_sach_hoi_vien.html",
         {
             "cac_hoi_vien": cac_hoi_vien,
         },
@@ -146,7 +146,7 @@ def tao_hoi_vien_moi(request):
 
     return render(
         request,
-        "users/quan_tri/tao_hoi_vien.html",
+        "gym/hoi_vien/tao_hoi_vien.html",
         {
             "form": form,
             "tieu_de_trang": "Thêm hội viên",
@@ -188,7 +188,7 @@ def chinh_sua_hoi_vien(request, ma_hv):
 
     return render(
         request,
-        "users/quan_tri/tao_hoi_vien.html",
+        "gym/hoi_vien/tao_hoi_vien.html",
         {
             "form": form,
             "tieu_de_trang": "Chỉnh sửa hội viên",
@@ -253,7 +253,7 @@ def chi_tiet_hoi_vien(request, ma_hv):
 
     return render(
         request,
-        "users/quan_tri/chi_tiet_hoi_vien.html",
+        "gym/hoi_vien/chi_tiet_hoi_vien.html",
         {
             "hoi_vien": hoi_vien,
         },
@@ -266,7 +266,7 @@ def danh_sach_goi_tap(request):
 
     return render(
         request,
-        "users/quan_tri/danh_sach_goi_tap.html",
+        "gym/goi_tap/danh_sach_goi_tap.html",
         {
             "cac_goi_tap": cac_goi_tap,
         },
@@ -286,7 +286,7 @@ def tao_goi_tap_moi(request):
 
     return render(
         request,
-        "users/quan_tri/bieu_mau_goi_tap.html",
+        "gym/goi_tap/bieu_mau_goi_tap.html",
         {
             "form": form,
             "tieu_de_trang": "Thêm gói tập",
@@ -321,7 +321,7 @@ def chinh_sua_goi_tap(request, ma_goi):
 
     return render(
         request,
-        "users/quan_tri/bieu_mau_goi_tap.html",
+        "gym/goi_tap/bieu_mau_goi_tap.html",
         {
             "form": form,
             "goi_tap": goi_tap,
@@ -381,7 +381,7 @@ def danh_sach_nhan_vien(request):
 
     return render(
         request,
-        "users/quan_tri/danh_sach_nhan_vien.html",
+        "gym/nhan_vien/danh_sach_nhan_vien.html",
         {
             "cac_le_tan": cac_le_tan,
             "cac_huan_luyen_vien": (
@@ -419,7 +419,7 @@ def tao_nhan_vien_moi(request, loai_nhan_vien):
 
     return render(
         request,
-        "users/quan_tri/bieu_mau_nhan_vien.html",
+        "gym/nhan_vien/bieu_mau_nhan_vien.html",
         {
             "form": form,
             "loai_nhan_vien": loai_nhan_vien,
@@ -458,7 +458,7 @@ def chi_tiet_nhan_vien(
 
     return render(
         request,
-        "users/quan_tri/chi_tiet_nhan_vien.html",
+        "gym/nhan_vien/chi_tiet_nhan_vien.html",
         {
             "nhan_vien": nhan_vien,
             "ma_nhan_vien": ma_nhan_vien,
@@ -499,7 +499,7 @@ def chinh_sua_nhan_vien(
 
     return render(
         request,
-        "users/quan_tri/bieu_mau_nhan_vien.html",
+        "gym/nhan_vien/bieu_mau_nhan_vien.html",
         {
             "form": form,
             "nhan_vien": nhan_vien,
@@ -663,7 +663,7 @@ def danh_sach_dang_ky_hoa_don(request):
 
     return render(
         request,
-        "users/dang_ky_hoa_don/"
+        "gym/dang_ky_hoa_don/"
         "danh_sach_dang_ky_hoa_don.html",
         {
             "cac_dang_ky": cac_dang_ky,
@@ -714,7 +714,7 @@ def tao_dang_ky_hoa_don(request):
 
     return render(
         request,
-        "users/dang_ky_hoa_don/"
+        "gym/dang_ky_hoa_don/"
         "tao_dang_ky_hoa_don.html",
         {
             "form": form,
@@ -782,7 +782,7 @@ def gia_han_goi_hoi_vien(request, ma_dk):
 
     return render(
         request,
-        "users/dang_ky_hoa_don/"
+        "gym/dang_ky_hoa_don/"
         "tao_dang_ky_hoa_don.html",
         {
             "form": form,
@@ -830,7 +830,7 @@ def chi_tiet_dang_ky_hoa_don(request, ma_dk):
 
     return render(
         request,
-        "users/dang_ky_hoa_don/"
+        "gym/dang_ky_hoa_don/"
         "chi_tiet_dang_ky_hoa_don.html",
         {
             "dang_ky": dang_ky,
@@ -845,7 +845,7 @@ def trang_le_tan(request):
 
     return render(
         request,
-        "users/le_tan.html",
+        "gym/trang_chu/le_tan.html",
     )
 
 
@@ -855,7 +855,7 @@ def trang_pt(request):
 
     return render(
         request,
-        "users/pt.html",
+        "gym/trang_chu/pt.html",
     )
 
 
@@ -865,5 +865,5 @@ def trang_hoi_vien(request):
 
     return render(
         request,
-        "users/hoi_vien.html",
+        "gym/trang_chu/hoi_vien.html",
     )

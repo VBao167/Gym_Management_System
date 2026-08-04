@@ -1100,13 +1100,13 @@ class PhanQuyenVaiTroTests(TestCase):
     def test_moi_khu_vuc_su_dung_dung_template(self):
         template_theo_vai_tro = {
             TaiKhoan.VaiTro.ADMIN:
-                "users/quan_tri.html",
+                "gym/trang_chu/quan_tri.html",
             TaiKhoan.VaiTro.LE_TAN:
-                "users/le_tan.html",
+                "gym/trang_chu/le_tan.html",
             TaiKhoan.VaiTro.PT:
-                "users/pt.html",
+                "gym/trang_chu/pt.html",
             TaiKhoan.VaiTro.HOI_VIEN:
-                "users/hoi_vien.html",
+                "gym/trang_chu/hoi_vien.html",
         }
 
         for vai_tro, tai_khoan in (
@@ -1271,7 +1271,7 @@ class DashboardQuanTriTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(
             response,
-            "users/quan_tri.html",
+            "gym/trang_chu/quan_tri.html",
         )
 
         self.assertEqual(
@@ -1353,7 +1353,7 @@ class DanhSachHoiVienTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(
             response,
-            "users/quan_tri/danh_sach_hoi_vien.html",
+            "gym/hoi_vien/danh_sach_hoi_vien.html",
         )
 
         cac_hoi_vien = list(
@@ -1541,7 +1541,7 @@ class TaoHoiVienTuGiaoDienTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(
             response,
-            "users/quan_tri/tao_hoi_vien.html",
+            "gym/hoi_vien/tao_hoi_vien.html",
         )
         self.assertContains(
             response,
@@ -1661,7 +1661,7 @@ class ChiTietHoiVienTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(
             response,
-            "users/quan_tri/chi_tiet_hoi_vien.html",
+            "gym/hoi_vien/chi_tiet_hoi_vien.html",
         )
         self.assertEqual(
             response.context["hoi_vien"],
@@ -1794,7 +1794,7 @@ class ChinhSuaHoiVienTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(
             response,
-            "users/quan_tri/tao_hoi_vien.html",
+            "gym/hoi_vien/tao_hoi_vien.html",
         )
         self.assertEqual(
             response.context["form"].instance,
@@ -2155,7 +2155,7 @@ class QuanLyGoiTapTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(
             response,
-            "users/quan_tri/danh_sach_goi_tap.html",
+            "gym/goi_tap/danh_sach_goi_tap.html",
         )
         self.assertContains(
             response,
@@ -2573,7 +2573,7 @@ class QuanLyNhanVienTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(
             response,
-            "users/quan_tri/danh_sach_nhan_vien.html",
+            "gym/nhan_vien/danh_sach_nhan_vien.html",
         )
         self.assertContains(
             response,
@@ -2622,7 +2622,7 @@ class QuanLyNhanVienTests(TestCase):
                 self.assertTemplateUsed(
                     response,
                     (
-                        "users/quan_tri/"
+                        "gym/nhan_vien/"
                         "bieu_mau_nhan_vien.html"
                     ),
                 )
@@ -2810,7 +2810,7 @@ class QuanLyNhanVienTests(TestCase):
                 self.assertTemplateUsed(
                     response,
                     (
-                        "users/quan_tri/"
+                        "gym/nhan_vien/"
                         "chi_tiet_nhan_vien.html"
                     ),
                 )
@@ -3291,7 +3291,7 @@ class QuanLyDangKyHoaDonTests(TestCase):
         self.assertTemplateUsed(
             response,
             (
-                "users/dang_ky_hoa_don/"
+                "gym/dang_ky_hoa_don/"
                 "danh_sach_dang_ky_hoa_don.html"
             ),
         )
