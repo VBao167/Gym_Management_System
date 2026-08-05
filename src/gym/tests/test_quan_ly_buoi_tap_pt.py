@@ -45,6 +45,15 @@ class QuanLyBuoiTapPTTests(TestCase):
             dia_chi="TP.HCM",
         )
 
+        self.le_tan_2 = tao_le_tan(
+            ho_ten="Lễ tân kiểm thử thay ca",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2000, 1, 2),
+            sdt="0981000006",
+            email="le.tan.buoi.pt.2@example.com",
+            dia_chi="TP.HCM",
+        )
+
         self.pt_1 = tao_huan_luyen_vien(
             ho_ten="PT đang làm việc thứ nhất",
             gioi_tinh="Nam",
@@ -204,7 +213,10 @@ class QuanLyBuoiTapPTTests(TestCase):
             "Buổi PT để Admin xem",
         )
         self.assertIsNone(
-            response_chi_tiet.context["form"],
+            response_chi_tiet.context["form_ket_qua"],
+        )
+        self.assertIsNone(
+            response_chi_tiet.context["form_huy"],
         )
 
     def test_le_tan_xem_danh_sach_va_co_nut_tao(
@@ -559,19 +571,38 @@ class QuanLyBuoiTapPTTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(
-            response,
-            (
-                "gym/buoi_tap_pt/"
-                "chi_tiet_buoi_tap_pt.html"
-            ),
+
+        form = response.context["form_ket_qua"]
+
+        self.assertIsNotNone(form)
+        self.assertIsNone(
+            response.context["form_huy"],
         )
         self.assertEqual(
-            list(response.context["form"].fields),
+            list(form.fields),
             [
                 "trang_thai",
                 "ghi_chu",
             ],
+        )
+
+        gia_tri_trang_thai = [
+            choice[0]
+            for choice in (
+                form.fields["trang_thai"].choices
+            )
+        ]
+
+        self.assertEqual(
+            gia_tri_trang_thai,
+            [
+                BuoiTapPT.TrangThai.HOAN_THANH,
+                BuoiTapPT.TrangThai.VANG,
+            ],
+        )
+        self.assertNotIn(
+            BuoiTapPT.TrangThai.HUY,
+            gia_tri_trang_thai,
         )
 
     def test_pt_khong_xem_duoc_buoi_cua_pt_khac(
@@ -599,7 +630,7 @@ class QuanLyBuoiTapPTTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
 
-    def test_admin_va_le_tan_chi_duoc_xem_chi_tiet(
+    def test_admin_chi_duoc_xem_chi_tiet(
         self
     ):
         buoi_tap = tao_buoi_tap_pt(
@@ -616,39 +647,61 @@ class QuanLyBuoiTapPTTests(TestCase):
             args=[buoi_tap.ma_buoi],
         )
 
-        for tai_khoan in (
-            self.admin,
-            self.le_tan.tai_khoan,
-        ):
-            with self.subTest(
-                username=tai_khoan.username
-            ):
-                self.client.force_login(tai_khoan)
+        self.client.force_login(self.admin)
 
-                response_get = self.client.get(url)
+        response_get = self.client.get(url)
 
-                self.assertEqual(
-                    response_get.status_code,
-                    200,
-                )
-                self.assertIsNone(
-                    response_get.context["form"],
-                )
+        self.assertEqual(response_get.status_code, 200)
+        self.assertIsNone(
+            response_get.context["form_ket_qua"],
+        )
+        self.assertIsNone(
+            response_get.context["form_huy"],
+        )
 
-                response_post = self.client.post(
-                    url,
-                    {
-                        "trang_thai": (
-                            BuoiTapPT.TrangThai.HUY
-                        ),
-                        "ghi_chu": "",
-                    },
-                )
+        response_post = self.client.post(
+            url,
+            {
+                "ly_do_huy": "Admin thử hủy",
+            },
+        )
 
-                self.assertEqual(
-                    response_post.status_code,
-                    403,
-                )
+        self.assertEqual(
+            response_post.status_code,
+            403,
+        )
+
+    def test_le_tan_xem_chi_tiet_va_co_form_huy(
+        self
+    ):
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.get(
+            reverse(
+                "gym:chi_tiet_buoi_tap_pt",
+                args=[buoi_tap.ma_buoi],
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(
+            response.context["form_ket_qua"],
+        )
+        self.assertEqual(
+            list(response.context["form_huy"].fields),
+            ["ly_do_huy"],
+        )
 
     def test_pt_hoan_thanh_buoi_sau_gio_ket_thuc(
         self
@@ -709,7 +762,7 @@ class QuanLyBuoiTapPTTests(TestCase):
 
         response_get = self.client.get(url)
         self.assertIsNone(
-            response_get.context["form"],
+            response_get.context["form_ket_qua"],
         )
 
     def test_pt_khong_hoan_thanh_truoc_gio_ket_thuc(
@@ -757,7 +810,7 @@ class QuanLyBuoiTapPTTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             "trang_thai",
-            response.context["form"].errors,
+            response.context["form_ket_qua"].errors,
         )
 
         buoi_tap.refresh_from_db()
@@ -766,7 +819,7 @@ class QuanLyBuoiTapPTTests(TestCase):
             BuoiTapPT.TrangThai.DA_LEN_LICH,
         )
 
-    def test_pt_huy_buoi_va_khong_duoc_sua_lai(
+    def test_pt_khong_duoc_gui_trang_thai_huy(
         self
     ):
         buoi_tap = tao_buoi_tap_pt(
@@ -790,36 +843,177 @@ class QuanLyBuoiTapPTTests(TestCase):
         response = self.client.post(
             url,
             {
-                "trang_thai": (
-                    BuoiTapPT.TrangThai.HUY
-                ),
-                "ghi_chu": "Hủy từ giao diện",
+                "trang_thai": BuoiTapPT.TrangThai.HUY,
+                "ghi_chu": "PT thử tự hủy",
             },
         )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "trang_thai",
+            response.context[
+                "form_ket_qua"
+            ].errors,
+        )
+
+        buoi_tap.refresh_from_db()
+
+        self.assertEqual(
+            buoi_tap.trang_thai,
+            BuoiTapPT.TrangThai.DA_LEN_LICH,
+        )
+
+    def test_le_tan_khac_huy_duoc_buoi_do_le_tan_khac_xep(
+        self
+    ):
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        thoi_diem_hien_tai = timezone.make_aware(
+            datetime.combine(
+                self.hom_nay,
+                time(8, 0),
+            )
+        )
+
+        self.client.force_login(
+            self.le_tan_2.tai_khoan
+        )
+
+        url = reverse(
+            "gym:chi_tiet_buoi_tap_pt",
+            args=[buoi_tap.ma_buoi],
+        )
+
+        with patch(
+            "gym.services.buoi_tap_pt.timezone.now",
+            return_value=thoi_diem_hien_tai,
+        ):
+            response = self.client.post(
+                url,
+                {
+                    "ly_do_huy": (
+                        "Hội viên yêu cầu hủy với ca sau"
+                    ),
+                },
+            )
 
         self.assertRedirects(response, url)
 
         buoi_tap.refresh_from_db()
+
+        self.assertEqual(
+            buoi_tap.le_tan,
+            self.le_tan,
+        )
         self.assertEqual(
             buoi_tap.trang_thai,
             BuoiTapPT.TrangThai.HUY,
         )
+        self.assertEqual(
+            buoi_tap.ghi_chu,
+            (
+                f"Hủy bởi {self.le_tan_2.ma_lt}: "
+                "Hội viên yêu cầu hủy với ca sau"
+            ),
+        )
 
         response_get = self.client.get(url)
+
         self.assertIsNone(
-            response_get.context["form"],
+            response_get.context["form_huy"],
+        )
+        self.assertNotContains(
+            response_get,
+            "Buổi tập này đã được chốt trạng thái",
         )
 
-        response_post_lai = self.client.post(
-            url,
+    def test_le_tan_phai_nhap_ly_do_huy(
+        self
+    ):
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.post(
+            reverse(
+                "gym:chi_tiet_buoi_tap_pt",
+                args=[buoi_tap.ma_buoi],
+            ),
             {
-                "trang_thai": (
-                    BuoiTapPT.TrangThai.HOAN_THANH
-                ),
-                "ghi_chu": "",
+                "ly_do_huy": "",
             },
         )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "ly_do_huy",
+            response.context["form_huy"].errors,
+        )
+
+    def test_le_tan_khong_duoc_huy_tu_gio_bat_dau(
+        self
+    ):
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        thoi_diem_hien_tai = timezone.make_aware(
+            datetime.combine(
+                self.hom_nay,
+                time(9, 0),
+            )
+        )
+
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        url = reverse(
+            "gym:chi_tiet_buoi_tap_pt",
+            args=[buoi_tap.ma_buoi],
+        )
+
+        with patch(
+            "gym.services.buoi_tap_pt.timezone.now",
+            return_value=thoi_diem_hien_tai,
+        ):
+            response = self.client.post(
+                url,
+                {
+                    "ly_do_huy": "Yêu cầu quá muộn",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "ly_do_huy",
+            response.context["form_huy"].errors,
+        )
+
+        buoi_tap.refresh_from_db()
+
         self.assertEqual(
-            response_post_lai.status_code,
-            403,
+            buoi_tap.trang_thai,
+            BuoiTapPT.TrangThai.DA_LEN_LICH,
         )

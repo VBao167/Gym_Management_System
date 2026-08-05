@@ -9,6 +9,7 @@ from accounts.decorators import vai_tro_required
 from accounts.models import TaiKhoan
 from gym.forms import (
     BuoiTapPTForm,
+    HuyBuoiTapPTForm,
     CapNhatKetQuaBuoiTapPTForm,
     DangKyGoiVaHoaDonForm,
     DiemDanhForm,
@@ -43,6 +44,7 @@ from gym.services.gia_han_goi import gia_han_goi
 from gym.services.diem_danh import tao_diem_danh
 from gym.services.buoi_tap_pt import (
     cap_nhat_ket_qua_buoi_tap_pt,
+    huy_buoi_tap_pt,
     tao_buoi_tap_pt,
 )
 
@@ -1098,26 +1100,78 @@ def chi_tiet_buoi_tap_pt(request, ma_buoi):
         pk=ma_buoi,
     )
 
-    huan_luyen_vien_dang_nhap = None
-    form = None
+    form_ket_qua = None
+    form_huy = None
 
     if request.user.vai_tro == TaiKhoan.VaiTro.LE_TAN:
-        _lay_le_tan_dang_nhap(request)
+        le_tan = _lay_le_tan_dang_nhap(request)
 
-        if request.method == "POST":
+        if (
+            buoi_tap.trang_thai
+            == BuoiTapPT.TrangThai.DA_LEN_LICH
+        ):
+            form_huy = HuyBuoiTapPTForm(
+                request.POST or None
+            )
+
+            if (
+                request.method == "POST"
+                and form_huy.is_valid()
+            ):
+                try:
+                    huy_buoi_tap_pt(
+                        buoi_tap=buoi_tap,
+                        le_tan=le_tan,
+                        ly_do_huy=(
+                            form_huy.cleaned_data[
+                                "ly_do_huy"
+                            ]
+                        ),
+                    )
+                except ValidationError as error:
+                    if hasattr(error, "error_dict"):
+                        for ten_truong, cac_loi in (
+                            error.error_dict.items()
+                        ):
+                            truong_form = (
+                                ten_truong
+                                if ten_truong
+                                in form_huy.fields
+                                else None
+                            )
+
+                            for loi in cac_loi:
+                                form_huy.add_error(
+                                    truong_form,
+                                    loi,
+                                )
+                    else:
+                        form_huy.add_error(
+                            None,
+                            error,
+                        )
+                else:
+                    return redirect(
+                        "gym:chi_tiet_buoi_tap_pt",
+                        ma_buoi=buoi_tap.ma_buoi,
+                    )
+
+        elif request.method == "POST":
             raise PermissionDenied(
-                "Lễ tân không được cập nhật "
-                "kết quả buổi tập PT."
+                "Buổi tập đã được chốt trạng thái "
+                "và không thể hủy."
             )
 
     elif request.user.vai_tro == TaiKhoan.VaiTro.PT:
-        huan_luyen_vien_dang_nhap = (
-            _lay_huan_luyen_vien_dang_nhap(request)
+        huan_luyen_vien = (
+            _lay_huan_luyen_vien_dang_nhap(
+                request
+            )
         )
 
         if (
             buoi_tap.huan_luyen_vien_id
-            != huan_luyen_vien_dang_nhap.pk
+            != huan_luyen_vien.pk
         ):
             raise PermissionDenied(
                 "Huấn luyện viên không được xem "
@@ -1128,30 +1182,32 @@ def chi_tiet_buoi_tap_pt(request, ma_buoi):
             buoi_tap.trang_thai
             == BuoiTapPT.TrangThai.DA_LEN_LICH
         ):
-            form = CapNhatKetQuaBuoiTapPTForm(
-                request.POST or None,
-                initial={
-                    "ghi_chu": buoi_tap.ghi_chu,
-                },
+            form_ket_qua = (
+                CapNhatKetQuaBuoiTapPTForm(
+                    request.POST or None,
+                    initial={
+                        "ghi_chu": buoi_tap.ghi_chu,
+                    },
+                )
             )
 
             if (
                 request.method == "POST"
-                and form.is_valid()
+                and form_ket_qua.is_valid()
             ):
                 try:
                     cap_nhat_ket_qua_buoi_tap_pt(
                         buoi_tap=buoi_tap,
                         huan_luyen_vien=(
-                            huan_luyen_vien_dang_nhap
+                            huan_luyen_vien
                         ),
                         trang_thai=(
-                            form.cleaned_data[
+                            form_ket_qua.cleaned_data[
                                 "trang_thai"
                             ]
                         ),
                         ghi_chu=(
-                            form.cleaned_data[
+                            form_ket_qua.cleaned_data[
                                 "ghi_chu"
                             ]
                         ),
@@ -1163,17 +1219,21 @@ def chi_tiet_buoi_tap_pt(request, ma_buoi):
                         ):
                             truong_form = (
                                 ten_truong
-                                if ten_truong in form.fields
+                                if ten_truong
+                                in form_ket_qua.fields
                                 else None
                             )
 
                             for loi in cac_loi:
-                                form.add_error(
+                                form_ket_qua.add_error(
                                     truong_form,
                                     loi,
                                 )
                     else:
-                        form.add_error(None, error)
+                        form_ket_qua.add_error(
+                            None,
+                            error,
+                        )
                 else:
                     return redirect(
                         "gym:chi_tiet_buoi_tap_pt",
@@ -1187,8 +1247,8 @@ def chi_tiet_buoi_tap_pt(request, ma_buoi):
 
     elif request.method == "POST":
         raise PermissionDenied(
-            "Admin không được cập nhật "
-            "kết quả buổi tập PT."
+            "Admin không được thay đổi "
+            "trạng thái buổi tập PT."
         )
 
     return render(
@@ -1197,7 +1257,8 @@ def chi_tiet_buoi_tap_pt(request, ma_buoi):
         "chi_tiet_buoi_tap_pt.html",
         {
             "buoi_tap": buoi_tap,
-            "form": form,
+            "form_ket_qua": form_ket_qua,
+            "form_huy": form_huy,
         },
     )
 

@@ -97,20 +97,26 @@
       </div>
     </div>
 
-    {% if form %}
+    {% if form_ket_qua %}
       <div class="detail-card">
-        <h3>Cập nhật kết quả buổi tập</h3>
+        <h3>Ghi nhận kết quả buổi tập</h3>
+
+        <p>
+          Huấn luyện viên chỉ được ghi nhận
+          Hoàn thành hoặc Vắng sau khi buổi tập
+          đã kết thúc.
+        </p>
 
         <form method="post" novalidate>
           {% csrf_token %}
 
-          {% if form.non_field_errors %}
+          {% if form_ket_qua.non_field_errors %}
             <div class="error-message">
-              {{ form.non_field_errors }}
+              {{ form_ket_qua.non_field_errors }}
             </div>
           {% endif %}
 
-          {% for field in form %}
+          {% for field in form_ket_qua %}
             <div class="form-group">
               <label for="{{ field.id_for_label }}">
                 {{ field.label }}
@@ -131,12 +137,45 @@
           </button>
         </form>
       </div>
-    {% elif request.user.vai_tro == "PT" %}
+
+    {% elif form_huy %}
       <div class="detail-card">
+        <h3>Hủy buổi tập PT</h3>
+
         <p>
-          Kết quả của buổi tập này đã được chốt
-          và không thể chỉnh sửa lại.
+          Lễ tân có thể hủy buổi tập trước giờ
+          bắt đầu khi tiếp nhận yêu cầu từ Hội viên.
         </p>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form_huy.non_field_errors %}
+            <div class="error-message">
+              {{ form_huy.non_field_errors }}
+            </div>
+          {% endif %}
+
+          {% for field in form_huy %}
+            <div class="form-group">
+              <label for="{{ field.id_for_label }}">
+                {{ field.label }}
+              </label>
+
+              {{ field }}
+
+              {% for error in field.errors %}
+                <p class="error-message">
+                  {{ error }}
+                </p>
+              {% endfor %}
+            </div>
+          {% endfor %}
+
+          <button class="danger-button" type="submit">
+            Xác nhận hủy buổi tập
+          </button>
+        </form>
       </div>
     {% endif %}
   </section>

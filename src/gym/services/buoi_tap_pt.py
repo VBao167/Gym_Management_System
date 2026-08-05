@@ -83,6 +83,24 @@ def tao_buoi_tap_pt(
 def tao_buoi_tap_pt_tu_doi_tuong(buoi_tap):
     return _tao_buoi_tap_pt(buoi_tap)
 
+def _lay_ngay_va_gio_hien_tai():
+    thoi_diem_hien_tai = timezone.now()
+
+    if timezone.is_aware(thoi_diem_hien_tai):
+        thoi_diem_hien_tai = timezone.localtime(
+            thoi_diem_hien_tai
+        )
+
+    ngay_hien_tai = thoi_diem_hien_tai.date()
+    gio_hien_tai = (
+        thoi_diem_hien_tai
+        .time()
+        .replace(tzinfo=None)
+    )
+
+    return ngay_hien_tai, gio_hien_tai
+
+
 @transaction.atomic
 def cap_nhat_ket_qua_buoi_tap_pt(
     *,
@@ -130,33 +148,19 @@ def cap_nhat_ket_qua_buoi_tap_pt(
             "mới được cập nhật kết quả."
         )
 
-    cac_trang_thai_hop_le = {
+    cac_ket_qua_hop_le = {
         BuoiTapPT.TrangThai.HOAN_THANH,
         BuoiTapPT.TrangThai.VANG,
-        BuoiTapPT.TrangThai.HUY,
     }
 
-    if trang_thai not in cac_trang_thai_hop_le:
+    if trang_thai not in cac_ket_qua_hop_le:
         errors["trang_thai"] = (
-            "Kết quả buổi tập không hợp lệ."
+            "PT chỉ được ghi nhận kết quả "
+            "Hoàn thành hoặc Vắng."
         )
-
-    if trang_thai in {
-        BuoiTapPT.TrangThai.HOAN_THANH,
-        BuoiTapPT.TrangThai.VANG,
-    }:
-        thoi_diem_hien_tai = timezone.now()
-
-        if timezone.is_aware(thoi_diem_hien_tai):
-            thoi_diem_hien_tai = timezone.localtime(
-                thoi_diem_hien_tai
-            )
-
-        ngay_hien_tai = thoi_diem_hien_tai.date()
-        gio_hien_tai = (
-            thoi_diem_hien_tai
-            .time()
-            .replace(tzinfo=None)
+    else:
+        ngay_hien_tai, gio_hien_tai = (
+            _lay_ngay_va_gio_hien_tai()
         )
 
         buoi_tap_da_ket_thuc = (
@@ -179,6 +183,84 @@ def cap_nhat_ket_qua_buoi_tap_pt(
 
     buoi_tap.trang_thai = trang_thai
     buoi_tap.ghi_chu = (ghi_chu or "").strip()
+
+    buoi_tap.full_clean()
+    buoi_tap.save(
+        update_fields=[
+            "trang_thai",
+            "ghi_chu",
+        ]
+    )
+
+    return buoi_tap
+
+
+@transaction.atomic
+def huy_buoi_tap_pt(
+    *,
+    buoi_tap,
+    le_tan,
+    ly_do_huy,
+):
+    buoi_tap = (
+        BuoiTapPT.objects
+        .select_for_update()
+        .get(pk=buoi_tap.pk)
+    )
+
+    errors = {}
+
+    if not le_tan.trang_thai:
+        errors["le_tan"] = (
+            "Lễ tân đã ngừng làm việc, "
+            "không thể hủy buổi tập PT."
+        )
+    elif not le_tan.tai_khoan.is_active:
+        errors["le_tan"] = (
+            "Tài khoản Lễ tân đang bị khóa."
+        )
+
+    if (
+        buoi_tap.trang_thai
+        != BuoiTapPT.TrangThai.DA_LEN_LICH
+    ):
+        errors["trang_thai"] = (
+            "Chỉ buổi đang ở trạng thái Đã lên lịch "
+            "mới được hủy."
+        )
+
+    ly_do_huy = (ly_do_huy or "").strip()
+
+    if not ly_do_huy:
+        errors["ly_do_huy"] = (
+            "Phải nhập lý do hủy buổi tập."
+        )
+
+    ngay_hien_tai, gio_hien_tai = (
+        _lay_ngay_va_gio_hien_tai()
+    )
+
+    buoi_tap_chua_bat_dau = (
+        buoi_tap.ngay_tap > ngay_hien_tai
+        or (
+            buoi_tap.ngay_tap == ngay_hien_tai
+            and buoi_tap.gio_bat_dau
+            > gio_hien_tai
+        )
+    )
+
+    if not buoi_tap_chua_bat_dau:
+        errors["ly_do_huy"] = (
+            "Chỉ được hủy buổi tập trước giờ bắt đầu."
+        )
+
+    if errors:
+        raise ValidationError(errors)
+
+    buoi_tap.trang_thai = BuoiTapPT.TrangThai.HUY
+    buoi_tap.ghi_chu = (
+        f"Hủy bởi {le_tan.ma_lt}: {ly_do_huy}"
+    )
 
     buoi_tap.full_clean()
     buoi_tap.save(

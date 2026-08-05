@@ -555,10 +555,6 @@ class CapNhatKetQuaBuoiTapPTForm(forms.Form):
                 BuoiTapPT.TrangThai.VANG,
                 BuoiTapPT.TrangThai.VANG.label,
             ),
-            (
-                BuoiTapPT.TrangThai.HUY,
-                BuoiTapPT.TrangThai.HUY.label,
-            ),
         ],
         widget=forms.Select(
             attrs={
@@ -577,6 +573,23 @@ class CapNhatKetQuaBuoiTapPTForm(forms.Form):
                 "placeholder": (
                     "Nhập ghi chú về kết quả "
                     "của buổi tập nếu có"
+                ),
+                "rows": 4,
+            }
+        ),
+    )
+
+class HuyBuoiTapPTForm(forms.Form):
+    ly_do_huy = forms.CharField(
+        required=True,
+        max_length=220,
+        label="Lý do hủy",
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-textarea",
+                "placeholder": (
+                    "Nhập lý do Hội viên yêu cầu "
+                    "hủy buổi tập"
                 ),
                 "rows": 4,
             }

@@ -17,6 +17,7 @@ from gym.models import (
 )
 from gym.services.buoi_tap_pt import (
     cap_nhat_ket_qua_buoi_tap_pt,
+    huy_buoi_tap_pt,
     tao_buoi_tap_pt,
     tao_buoi_tap_pt_tu_doi_tuong,
 )
@@ -428,7 +429,7 @@ class BuoiTapPTServiceTests(TestCase):
             "Đã hoàn thành buổi tập",
         )
 
-    def test_cho_phep_huy_truoc_khi_buoi_tap_ket_thuc(
+    def test_pt_khong_duoc_huy_buoi_tap(
         self
     ):
         buoi_tap = tao_buoi_tap_pt(
@@ -440,16 +441,20 @@ class BuoiTapPTServiceTests(TestCase):
             gio_ket_thuc=time(10, 0),
         )
 
-        ket_qua = cap_nhat_ket_qua_buoi_tap_pt(
-            buoi_tap=buoi_tap,
-            huan_luyen_vien=self.pt_1,
-            trang_thai=BuoiTapPT.TrangThai.HUY,
-            ghi_chu="Hủy trước giờ tập",
+        self.assert_loi_truong(
+            "trang_thai",
+            lambda: cap_nhat_ket_qua_buoi_tap_pt(
+                buoi_tap=buoi_tap,
+                huan_luyen_vien=self.pt_1,
+                trang_thai=BuoiTapPT.TrangThai.HUY,
+            ),
         )
 
+        buoi_tap.refresh_from_db()
+
         self.assertEqual(
-            ket_qua.trang_thai,
-            BuoiTapPT.TrangThai.HUY,
+            buoi_tap.trang_thai,
+            BuoiTapPT.TrangThai.DA_LEN_LICH,
         )
 
     def test_chan_pt_khac_cap_nhat_ket_qua(
@@ -485,19 +490,246 @@ class BuoiTapPTServiceTests(TestCase):
             gio_ket_thuc=time(10, 0),
         )
 
-        cap_nhat_ket_qua_buoi_tap_pt(
-            buoi_tap=buoi_tap,
-            huan_luyen_vien=self.pt_1,
-            trang_thai=BuoiTapPT.TrangThai.HUY,
+        thoi_diem_hien_tai = timezone.make_aware(
+            datetime.combine(
+                self.hom_nay,
+                time(10, 30),
+            )
         )
 
-        self.assert_loi_truong(
-            "trang_thai",
-            lambda: cap_nhat_ket_qua_buoi_tap_pt(
+        with patch(
+            "gym.services.buoi_tap_pt.timezone.now",
+            return_value=thoi_diem_hien_tai,
+        ):
+            cap_nhat_ket_qua_buoi_tap_pt(
                 buoi_tap=buoi_tap,
                 huan_luyen_vien=self.pt_1,
                 trang_thai=(
                     BuoiTapPT.TrangThai.HOAN_THANH
                 ),
+            )
+
+        with patch(
+            "gym.services.buoi_tap_pt.timezone.now",
+            return_value=thoi_diem_hien_tai,
+        ):
+            self.assert_loi_truong(
+                "trang_thai",
+                lambda: cap_nhat_ket_qua_buoi_tap_pt(
+                    buoi_tap=buoi_tap,
+                    huan_luyen_vien=self.pt_1,
+                    trang_thai=(
+                        BuoiTapPT.TrangThai.VANG
+                    ),
+                ),
+            )
+
+    def test_le_tan_duoc_huy_truoc_gio_bat_dau(
+        self
+    ):
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        thoi_diem_hien_tai = timezone.make_aware(
+            datetime.combine(
+                self.hom_nay,
+                time(8, 0),
+            )
+        )
+
+        with patch(
+            "gym.services.buoi_tap_pt.timezone.now",
+            return_value=thoi_diem_hien_tai,
+        ):
+            ket_qua = huy_buoi_tap_pt(
+                buoi_tap=buoi_tap,
+                le_tan=self.le_tan,
+                ly_do_huy="Hội viên yêu cầu đổi lịch",
+            )
+
+        self.assertEqual(
+            ket_qua.trang_thai,
+            BuoiTapPT.TrangThai.HUY,
+        )
+        self.assertEqual(
+            ket_qua.ghi_chu,
+            (
+                f"Hủy bởi {self.le_tan.ma_lt}: "
+                "Hội viên yêu cầu đổi lịch"
             ),
         )
+
+    def test_le_tan_khac_duoc_huy_buoi_do_le_tan_khac_xep(
+        self
+    ):
+        le_tan_2 = tao_le_tan(
+            ho_ten="Lễ tân thay ca",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2000, 6, 6),
+            sdt="0999000001",
+            email="le.tan.thay.ca@example.com",
+            dia_chi="TP.HCM",
+        )
+
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        thoi_diem_hien_tai = timezone.make_aware(
+            datetime.combine(
+                self.hom_nay,
+                time(8, 0),
+            )
+        )
+
+        with patch(
+            "gym.services.buoi_tap_pt.timezone.now",
+            return_value=thoi_diem_hien_tai,
+        ):
+            huy_buoi_tap_pt(
+                buoi_tap=buoi_tap,
+                le_tan=le_tan_2,
+                ly_do_huy="Hội viên báo hủy với ca sau",
+            )
+
+        buoi_tap.refresh_from_db()
+
+        self.assertEqual(
+            buoi_tap.le_tan,
+            self.le_tan,
+        )
+        self.assertEqual(
+            buoi_tap.trang_thai,
+            BuoiTapPT.TrangThai.HUY,
+        )
+        self.assertEqual(
+            buoi_tap.ghi_chu,
+            (
+                f"Hủy bởi {le_tan_2.ma_lt}: "
+                "Hội viên báo hủy với ca sau"
+            ),
+        )
+
+    def test_chan_huy_khi_khong_co_ly_do(
+        self
+    ):
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        thoi_diem_hien_tai = timezone.make_aware(
+            datetime.combine(
+                self.hom_nay,
+                time(8, 0),
+            )
+        )
+
+        with patch(
+            "gym.services.buoi_tap_pt.timezone.now",
+            return_value=thoi_diem_hien_tai,
+        ):
+            self.assert_loi_truong(
+                "ly_do_huy",
+                lambda: huy_buoi_tap_pt(
+                    buoi_tap=buoi_tap,
+                    le_tan=self.le_tan,
+                    ly_do_huy="",
+                ),
+            )
+
+    def test_chan_huy_tu_gio_bat_dau_tro_di(
+        self
+    ):
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        thoi_diem_hien_tai = timezone.make_aware(
+            datetime.combine(
+                self.hom_nay,
+                time(9, 0),
+            )
+        )
+
+        with patch(
+            "gym.services.buoi_tap_pt.timezone.now",
+            return_value=thoi_diem_hien_tai,
+        ):
+            self.assert_loi_truong(
+                "ly_do_huy",
+                lambda: huy_buoi_tap_pt(
+                    buoi_tap=buoi_tap,
+                    le_tan=self.le_tan,
+                    ly_do_huy="Yêu cầu hủy quá muộn",
+                ),
+            )
+
+        buoi_tap.refresh_from_db()
+
+        self.assertEqual(
+            buoi_tap.trang_thai,
+            BuoiTapPT.TrangThai.DA_LEN_LICH,
+        )
+
+    def test_chan_huy_buoi_da_chot(
+        self
+    ):
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        thoi_diem_hien_tai = timezone.make_aware(
+            datetime.combine(
+                self.hom_nay,
+                time(8, 0),
+            )
+        )
+
+        with patch(
+            "gym.services.buoi_tap_pt.timezone.now",
+            return_value=thoi_diem_hien_tai,
+        ):
+            huy_buoi_tap_pt(
+                buoi_tap=buoi_tap,
+                le_tan=self.le_tan,
+                ly_do_huy="Hủy lần đầu",
+            )
+
+        with patch(
+            "gym.services.buoi_tap_pt.timezone.now",
+            return_value=thoi_diem_hien_tai,
+        ):
+            self.assert_loi_truong(
+                "trang_thai",
+                lambda: huy_buoi_tap_pt(
+                    buoi_tap=buoi_tap,
+                    le_tan=self.le_tan,
+                    ly_do_huy="Hủy lại",
+                ),
+            )
