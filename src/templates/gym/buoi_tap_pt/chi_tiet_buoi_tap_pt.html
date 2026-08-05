@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Chi tiết buổi tập PT | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Chi tiết buổi tập PT
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>{{ buoi_tap.ma_buoi }}</h2>
+
+        <p>
+          {{ buoi_tap.dang_ky.hoi_vien.ma_hv }}
+          — {{ buoi_tap.dang_ky.hoi_vien.ho_ten }}
+        </p>
+      </div>
+
+      <a
+        class="secondary-button"
+        href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
+      >
+        Quay lại danh sách
+      </a>
+    </div>
+
+    <div class="detail-card">
+      <h3>Thông tin buổi tập</h3>
+
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">
+            Đăng ký gói PT
+          </span>
+          <strong>
+            {{ buoi_tap.dang_ky.ma_dk }}
+            — {{ buoi_tap.dang_ky.goi_tap.ten_goi }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">
+            Huấn luyện viên
+          </span>
+          <strong>
+            {{ buoi_tap.huan_luyen_vien.ma_pt }}
+            — {{ buoi_tap.huan_luyen_vien.ho_ten }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Ngày tập</span>
+          <strong>
+            {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Thời gian</span>
+          <strong>
+            {{ buoi_tap.gio_bat_dau|time:"H:i" }}
+            – {{ buoi_tap.gio_ket_thuc|time:"H:i" }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Trạng thái</span>
+          <strong>
+            {{ buoi_tap.get_trang_thai_display }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">
+            Lễ tân xếp lịch
+          </span>
+          <strong>
+            {{ buoi_tap.le_tan.ma_lt }}
+            — {{ buoi_tap.le_tan.ho_ten }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span class="detail-label">Ghi chú</span>
+          <strong>
+            {% if buoi_tap.ghi_chu %}
+              {{ buoi_tap.ghi_chu }}
+            {% else %}
+              Không có
+            {% endif %}
+          </strong>
+        </div>
+      </div>
+    </div>
+
+    {% if form %}
+      <div class="detail-card">
+        <h3>Cập nhật kết quả buổi tập</h3>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="error-message">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
+
+          {% for field in form %}
+            <div class="form-group">
+              <label for="{{ field.id_for_label }}">
+                {{ field.label }}
+              </label>
+
+              {{ field }}
+
+              {% for error in field.errors %}
+                <p class="error-message">
+                  {{ error }}
+                </p>
+              {% endfor %}
+            </div>
+          {% endfor %}
+
+          <button class="primary-button" type="submit">
+            Lưu kết quả buổi tập
+          </button>
+        </form>
+      </div>
+    {% elif request.user.vai_tro == "PT" %}
+      <div class="detail-card">
+        <p>
+          Kết quả của buổi tập này đã được chốt
+          và không thể chỉnh sửa lại.
+        </p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

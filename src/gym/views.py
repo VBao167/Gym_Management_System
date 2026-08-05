@@ -8,6 +8,8 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from accounts.decorators import vai_tro_required
 from accounts.models import TaiKhoan
 from gym.forms import (
+    BuoiTapPTForm,
+    CapNhatKetQuaBuoiTapPTForm,
     DangKyGoiVaHoaDonForm,
     DiemDanhForm,
     GiaHanGoiForm,
@@ -17,6 +19,7 @@ from gym.forms import (
     TaoHoiVienForm,
 )
 from gym.models import (
+    BuoiTapPT,
     DiemDanh,
     GoiTap,
     HoiVien,
@@ -38,6 +41,10 @@ from gym.services.dang_ky_goi import (
 )
 from gym.services.gia_han_goi import gia_han_goi
 from gym.services.diem_danh import tao_diem_danh
+from gym.services.buoi_tap_pt import (
+    cap_nhat_ket_qua_buoi_tap_pt,
+    tao_buoi_tap_pt,
+)
 
 CAU_HINH_NHAN_VIEN = {
     "le-tan": {
@@ -642,6 +649,31 @@ def _lay_le_tan_dang_nhap(request):
     return le_tan
 
 
+def _lay_huan_luyen_vien_dang_nhap(request):
+    try:
+        huan_luyen_vien = (
+            HuanLuyenVien.objects
+            .select_related("tai_khoan")
+            .get(tai_khoan=request.user)
+        )
+    except HuanLuyenVien.DoesNotExist as error:
+        raise PermissionDenied(
+            "Tài khoản chưa có hồ sơ Huấn luyện viên."
+        ) from error
+
+    if not huan_luyen_vien.trang_thai:
+        raise PermissionDenied(
+            "Huấn luyện viên đã ngừng làm việc."
+        )
+
+    if not huan_luyen_vien.tai_khoan.is_active:
+        raise PermissionDenied(
+            "Tài khoản Huấn luyện viên đang bị khóa."
+        )
+
+    return huan_luyen_vien
+
+
 @vai_tro_required(
     TaiKhoan.VaiTro.ADMIN,
     TaiKhoan.VaiTro.LE_TAN,
@@ -922,6 +954,250 @@ def tao_diem_danh_moi(request):
         {
             "form": form,
             "le_tan": le_tan,
+        },
+    )
+
+
+@vai_tro_required(
+    TaiKhoan.VaiTro.ADMIN,
+    TaiKhoan.VaiTro.LE_TAN,
+    TaiKhoan.VaiTro.PT,
+)
+def danh_sach_buoi_tap_pt(request):
+    cap_nhat_trang_thai_toan_bo()
+
+    cac_buoi_tap = (
+        BuoiTapPT.objects
+        .select_related(
+            "dang_ky",
+            "dang_ky__hoi_vien",
+            "dang_ky__goi_tap",
+            "huan_luyen_vien",
+            "le_tan",
+        )
+        .order_by(
+            "-ngay_tap",
+            "-gio_bat_dau",
+            "ma_buoi",
+        )
+    )
+
+    la_lich_ca_nhan = False
+
+    if request.user.vai_tro == TaiKhoan.VaiTro.LE_TAN:
+        _lay_le_tan_dang_nhap(request)
+
+    elif request.user.vai_tro == TaiKhoan.VaiTro.PT:
+        huan_luyen_vien = (
+            _lay_huan_luyen_vien_dang_nhap(request)
+        )
+
+        cac_buoi_tap = cac_buoi_tap.filter(
+            huan_luyen_vien=huan_luyen_vien,
+        )
+        la_lich_ca_nhan = True
+
+    return render(
+        request,
+        "gym/buoi_tap_pt/"
+        "danh_sach_buoi_tap_pt.html",
+        {
+            "cac_buoi_tap": cac_buoi_tap,
+            "la_lich_ca_nhan": la_lich_ca_nhan,
+        },
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.LE_TAN)
+def tao_buoi_tap_pt_moi(request):
+    le_tan = _lay_le_tan_dang_nhap(request)
+
+    cap_nhat_trang_thai_toan_bo()
+
+    form = BuoiTapPTForm(
+        request.POST or None
+    )
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            tao_buoi_tap_pt(
+                dang_ky=(
+                    form.cleaned_data["dang_ky"]
+                ),
+                huan_luyen_vien=(
+                    form.cleaned_data[
+                        "huan_luyen_vien"
+                    ]
+                ),
+                le_tan=le_tan,
+                ngay_tap=(
+                    form.cleaned_data["ngay_tap"]
+                ),
+                gio_bat_dau=(
+                    form.cleaned_data[
+                        "gio_bat_dau"
+                    ]
+                ),
+                gio_ket_thuc=(
+                    form.cleaned_data[
+                        "gio_ket_thuc"
+                    ]
+                ),
+                ghi_chu=(
+                    form.cleaned_data["ghi_chu"]
+                ),
+            )
+        except ValidationError as error:
+            if hasattr(error, "error_dict"):
+                for ten_truong, cac_loi in (
+                    error.error_dict.items()
+                ):
+                    truong_form = (
+                        ten_truong
+                        if ten_truong in form.fields
+                        else None
+                    )
+
+                    for loi in cac_loi:
+                        form.add_error(
+                            truong_form,
+                            loi,
+                        )
+            else:
+                form.add_error(None, error)
+        else:
+            return redirect(
+                "gym:danh_sach_buoi_tap_pt"
+            )
+
+    return render(
+        request,
+        "gym/buoi_tap_pt/tao_buoi_tap_pt.html",
+        {
+            "form": form,
+            "le_tan": le_tan,
+        },
+    )
+
+
+@vai_tro_required(
+    TaiKhoan.VaiTro.ADMIN,
+    TaiKhoan.VaiTro.LE_TAN,
+    TaiKhoan.VaiTro.PT,
+)
+def chi_tiet_buoi_tap_pt(request, ma_buoi):
+    buoi_tap = get_object_or_404(
+        BuoiTapPT.objects.select_related(
+            "dang_ky",
+            "dang_ky__hoi_vien",
+            "dang_ky__goi_tap",
+            "huan_luyen_vien",
+            "huan_luyen_vien__tai_khoan",
+            "le_tan",
+        ),
+        pk=ma_buoi,
+    )
+
+    huan_luyen_vien_dang_nhap = None
+    form = None
+
+    if request.user.vai_tro == TaiKhoan.VaiTro.LE_TAN:
+        _lay_le_tan_dang_nhap(request)
+
+        if request.method == "POST":
+            raise PermissionDenied(
+                "Lễ tân không được cập nhật "
+                "kết quả buổi tập PT."
+            )
+
+    elif request.user.vai_tro == TaiKhoan.VaiTro.PT:
+        huan_luyen_vien_dang_nhap = (
+            _lay_huan_luyen_vien_dang_nhap(request)
+        )
+
+        if (
+            buoi_tap.huan_luyen_vien_id
+            != huan_luyen_vien_dang_nhap.pk
+        ):
+            raise PermissionDenied(
+                "Huấn luyện viên không được xem "
+                "buổi tập của người khác."
+            )
+
+        if (
+            buoi_tap.trang_thai
+            == BuoiTapPT.TrangThai.DA_LEN_LICH
+        ):
+            form = CapNhatKetQuaBuoiTapPTForm(
+                request.POST or None,
+                initial={
+                    "ghi_chu": buoi_tap.ghi_chu,
+                },
+            )
+
+            if (
+                request.method == "POST"
+                and form.is_valid()
+            ):
+                try:
+                    cap_nhat_ket_qua_buoi_tap_pt(
+                        buoi_tap=buoi_tap,
+                        huan_luyen_vien=(
+                            huan_luyen_vien_dang_nhap
+                        ),
+                        trang_thai=(
+                            form.cleaned_data[
+                                "trang_thai"
+                            ]
+                        ),
+                        ghi_chu=(
+                            form.cleaned_data[
+                                "ghi_chu"
+                            ]
+                        ),
+                    )
+                except ValidationError as error:
+                    if hasattr(error, "error_dict"):
+                        for ten_truong, cac_loi in (
+                            error.error_dict.items()
+                        ):
+                            truong_form = (
+                                ten_truong
+                                if ten_truong in form.fields
+                                else None
+                            )
+
+                            for loi in cac_loi:
+                                form.add_error(
+                                    truong_form,
+                                    loi,
+                                )
+                    else:
+                        form.add_error(None, error)
+                else:
+                    return redirect(
+                        "gym:chi_tiet_buoi_tap_pt",
+                        ma_buoi=buoi_tap.ma_buoi,
+                    )
+
+        elif request.method == "POST":
+            raise PermissionDenied(
+                "Kết quả buổi tập đã được chốt."
+            )
+
+    elif request.method == "POST":
+        raise PermissionDenied(
+            "Admin không được cập nhật "
+            "kết quả buổi tập PT."
+        )
+
+    return render(
+        request,
+        "gym/buoi_tap_pt/"
+        "chi_tiet_buoi_tap_pt.html",
+        {
+            "buoi_tap": buoi_tap,
+            "form": form,
         },
     )
 

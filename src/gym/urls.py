@@ -151,6 +151,23 @@ urlpatterns = [
         name="tao_diem_danh_moi",
     ),
 
+    # Quản lý buổi tập PT
+    path(
+        "buoi-tap-pt/",
+        views.danh_sach_buoi_tap_pt,
+        name="danh_sach_buoi_tap_pt",
+    ),
+    path(
+        "buoi-tap-pt/them-moi/",
+        views.tao_buoi_tap_pt_moi,
+        name="tao_buoi_tap_pt_moi",
+    ),
+    path(
+        "buoi-tap-pt/<str:ma_buoi>/",
+        views.chi_tiet_buoi_tap_pt,
+        name="chi_tiet_buoi_tap_pt",
+    ),
+
     # Trang chính theo vai trò
     path(
         "le-tan/",

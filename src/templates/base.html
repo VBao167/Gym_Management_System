@@ -72,10 +72,13 @@
                 Đăng ký và hóa đơn
             </a>
 
-              <span class="sidebar-link is-disabled">
+            <a
+                href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'tao_buoi_tap_pt_moi' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">06</span>
                 Lịch tập PT
-              </span>
+            </a>
 
             <a
                 href="{% url 'gym:danh_sach_diem_danh' %}"
@@ -125,21 +128,34 @@
                 Điểm danh
             </a>
 
-              <span class="sidebar-link is-disabled">
+            <a
+                href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'tao_buoi_tap_pt_moi' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">05</span>
                 Lịch tập PT
-              </span>
+            </a>
 
             {% elif request.user.vai_tro == "PT" %}
-              <p class="sidebar-heading">KHU VỰC HUẤN LUYỆN VIÊN</p>
+                <p class="sidebar-heading">
+                    KHU VỰC HUẤN LUYỆN VIÊN
+                </p>
 
-              <a
-                href="{% url 'gym:trang_pt' %}"
-                class="sidebar-link is-active"
-              >
-                <span class="sidebar-icon">01</span>
-                Lịch tập của tôi
-              </a>
+                <a
+                    href="{% url 'gym:trang_pt' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'trang_pt' %} is-active{% endif %}"
+                >
+                    <span class="sidebar-icon">01</span>
+                    Trang chính
+                </a>
+
+                <a
+                    href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
+                >
+                    <span class="sidebar-icon">02</span>
+                    Lịch tập của tôi
+                </a>
 
             {% elif request.user.vai_tro == "HoiVien" %}
               <p class="sidebar-heading">KHU VỰC HỘI VIÊN</p>
@@ -157,10 +173,13 @@
                 Gói tập của tôi
               </span>
 
-              <span class="sidebar-link is-disabled">
+            <a
+                href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">03</span>
                 Lịch tập PT
-              </span>
+            </a>
 
               <span class="sidebar-link is-disabled">
                 <span class="sidebar-icon">04</span>

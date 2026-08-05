@@ -1,7 +1,41 @@
-{% extends "base.html" %} {% block title %} Huấn luyện viên | Hệ thống quản lý
-phòng Gym {% endblock %} {% block content %}
-<section>
-  <h2>Khu vực Huấn luyện viên.</h2>
-  <p>Chào mừng {{ request.user.username }}.</p>
-</section>
+{% extends "base.html" %}
+
+{% block title %}
+  Khu vực Huấn luyện viên | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Khu vực Huấn luyện viên
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Khu vực Huấn luyện viên</h2>
+
+        <p>
+          Theo dõi các buổi tập PT được phân công
+          và ghi nhận kết quả sau khi tập.
+        </p>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <h3>Lịch tập của tôi</h3>
+
+      <p>
+        Xem danh sách các buổi tập được phân công,
+        thông tin Hội viên, thời gian tập và trạng thái
+        của từng buổi.
+      </p>
+
+      <a
+        class="primary-button"
+        href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
+      >
+        Xem lịch tập của tôi
+      </a>
+    </div>
+  </section>
 {% endblock %}

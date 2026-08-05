@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from gym.models import (
+    BuoiTapPT,
     DangKyGoiTap,
     GoiTap,
     HoaDon,
@@ -426,3 +427,158 @@ class DiemDanhForm(forms.Form):
                 trang_thai=True,
             ).order_by("ma_hv")
         )
+
+class DangKyPTChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, dang_ky):
+        return (
+            f"{dang_ky.ma_dk} — "
+            f"{dang_ky.hoi_vien.ma_hv} — "
+            f"{dang_ky.hoi_vien.ho_ten} — "
+            f"{dang_ky.goi_tap.ten_goi} "
+            f"(có thể xếp: "
+            f"{dang_ky.so_buoi_pt_co_the_xep_lich})"
+        )
+
+
+class BuoiTapPTForm(forms.Form):
+    dang_ky = DangKyPTChoiceField(
+        queryset=DangKyGoiTap.objects.none(),
+        label="Đăng ký gói PT",
+        empty_label="Chọn đăng ký gói PT",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select",
+            }
+        ),
+    )
+
+    huan_luyen_vien = forms.ModelChoiceField(
+        queryset=HuanLuyenVien.objects.none(),
+        label="Huấn luyện viên",
+        empty_label="Chọn Huấn luyện viên",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select",
+            }
+        ),
+    )
+
+    ngay_tap = forms.DateField(
+        label="Ngày tập",
+        widget=forms.DateInput(
+            format="%Y-%m-%d",
+            attrs={
+                "class": "form-input",
+                "type": "date",
+            },
+        ),
+    )
+
+    gio_bat_dau = forms.TimeField(
+        label="Giờ bắt đầu",
+        widget=forms.TimeInput(
+            format="%H:%M",
+            attrs={
+                "class": "form-input",
+                "type": "time",
+            },
+        ),
+    )
+
+    gio_ket_thuc = forms.TimeField(
+        label="Giờ kết thúc",
+        widget=forms.TimeInput(
+            format="%H:%M",
+            attrs={
+                "class": "form-input",
+                "type": "time",
+            },
+        ),
+    )
+
+    ghi_chu = forms.CharField(
+        required=False,
+        max_length=255,
+        label="Ghi chú",
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-textarea",
+                "placeholder": (
+                    "Nhập ghi chú cho buổi tập nếu có"
+                ),
+                "rows": 3,
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["dang_ky"].queryset = (
+            DangKyGoiTap.objects
+            .filter(
+                so_buoi_pt_dang_ky__gt=0,
+            )
+            .select_related(
+                "hoi_vien",
+                "goi_tap",
+            )
+            .order_by(
+                "-ngay_dang_ky",
+                "ma_dk",
+            )
+        )
+
+        self.fields["huan_luyen_vien"].queryset = (
+            HuanLuyenVien.objects
+            .filter(
+                trang_thai=True,
+                tai_khoan__is_active=True,
+            )
+            .select_related("tai_khoan")
+            .order_by("ma_pt")
+        )
+
+        self.fields["ngay_tap"].initial = (
+            timezone.localdate()
+        )
+
+class CapNhatKetQuaBuoiTapPTForm(forms.Form):
+    trang_thai = forms.ChoiceField(
+        label="Kết quả buổi tập",
+        choices=[
+            (
+                BuoiTapPT.TrangThai.HOAN_THANH,
+                BuoiTapPT.TrangThai.HOAN_THANH.label,
+            ),
+            (
+                BuoiTapPT.TrangThai.VANG,
+                BuoiTapPT.TrangThai.VANG.label,
+            ),
+            (
+                BuoiTapPT.TrangThai.HUY,
+                BuoiTapPT.TrangThai.HUY.label,
+            ),
+        ],
+        widget=forms.Select(
+            attrs={
+                "class": "form-select",
+            }
+        ),
+    )
+
+    ghi_chu = forms.CharField(
+        required=False,
+        max_length=255,
+        label="Ghi chú kết quả",
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-textarea",
+                "placeholder": (
+                    "Nhập ghi chú về kết quả "
+                    "của buổi tập nếu có"
+                ),
+                "rows": 4,
+            }
+        ),
+    )

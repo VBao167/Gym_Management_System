@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Xếp buổi tập PT | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Xếp buổi tập PT
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Thông tin buổi tập PT</h2>
+
+        <p>
+          Chọn đăng ký gói PT, Huấn luyện viên
+          và thời gian dự kiến của buổi tập.
+        </p>
+
+        <p>
+          Lễ tân xếp lịch:
+          {{ le_tan.ma_lt }} — {{ le_tan.ho_ten }}.
+        </p>
+      </div>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="error-message">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+
+          {{ field }}
+
+          {% for error in field.errors %}
+            <p class="error-message">
+              {{ error }}
+            </p>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      <div class="form-actions">
+        <button class="primary-button" type="submit">
+          Xác nhận xếp lịch
+        </button>
+
+        <a
+          class="secondary-button"
+          href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
+        >
+          Quay lại danh sách
+        </a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

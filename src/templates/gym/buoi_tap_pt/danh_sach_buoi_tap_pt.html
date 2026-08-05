@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Lịch tập PT | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Lịch tập PT
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        {% if la_lich_ca_nhan %}
+          <h2>Lịch tập của tôi</h2>
+          <p>
+            Theo dõi các buổi tập PT được phân công.
+          </p>
+        {% else %}
+          <h2>Danh sách buổi tập PT</h2>
+          <p>
+            Theo dõi các buổi tập đã được xếp trong hệ thống.
+          </p>
+        {% endif %}
+      </div>
+
+      {% if request.user.vai_tro == "LeTan" %}
+        <a
+          class="primary-button"
+          href="{% url 'gym:tao_buoi_tap_pt_moi' %}"
+        >
+          Xếp buổi tập PT
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã buổi</th>
+            <th>Hội viên</th>
+            <th>Huấn luyện viên</th>
+            <th>Ngày tập</th>
+            <th>Thời gian</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for buoi_tap in cac_buoi_tap %}
+            <tr>
+              <td>
+                <strong>{{ buoi_tap.ma_buoi }}</strong>
+              </td>
+
+              <td>
+                {{ buoi_tap.dang_ky.hoi_vien.ma_hv }}
+                — {{ buoi_tap.dang_ky.hoi_vien.ho_ten }}
+              </td>
+
+              <td>
+                {{ buoi_tap.huan_luyen_vien.ma_pt }}
+                — {{ buoi_tap.huan_luyen_vien.ho_ten }}
+              </td>
+
+              <td>
+                {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
+              </td>
+
+              <td>
+                {{ buoi_tap.gio_bat_dau|time:"H:i" }}
+                – {{ buoi_tap.gio_ket_thuc|time:"H:i" }}
+              </td>
+
+              <td>
+                {{ buoi_tap.get_trang_thai_display }}
+              </td>
+
+              <td>
+                <a
+                  href="{% url 'gym:chi_tiet_buoi_tap_pt' buoi_tap.ma_buoi %}"
+                >
+                  Xem chi tiết
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7" class="empty-state">
+                Chưa có buổi tập PT phù hợp.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}
