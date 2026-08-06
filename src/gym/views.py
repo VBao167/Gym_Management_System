@@ -676,6 +676,21 @@ def _lay_huan_luyen_vien_dang_nhap(request):
     return huan_luyen_vien
 
 
+def _lay_hoi_vien_dang_nhap(request):
+    try:
+        hoi_vien = (
+            HoiVien.objects
+            .select_related("tai_khoan")
+            .get(tai_khoan=request.user)
+        )
+    except HoiVien.DoesNotExist as error:
+        raise PermissionDenied(
+            "Tài khoản chưa có hồ sơ Hội viên."
+        ) from error
+
+    return hoi_vien
+
+
 @vai_tro_required(
     TaiKhoan.VaiTro.ADMIN,
     TaiKhoan.VaiTro.LE_TAN,
@@ -1282,12 +1297,331 @@ def trang_pt(request):
         "gym/trang_chu/pt.html",
     )
 
+@vai_tro_required(TaiKhoan.VaiTro.HOI_VIEN)
+def goi_tap_cua_toi(request):
+    cap_nhat_trang_thai_toan_bo()
+
+    hoi_vien = _lay_hoi_vien_dang_nhap(request)
+
+    cac_dang_ky = (
+        DangKyGoiTap.objects
+        .filter(
+            hoi_vien=hoi_vien,
+        )
+        .select_related(
+            "goi_tap",
+        )
+        .order_by("ma_dk")
+    )
+
+    return render(
+        request,
+        (
+            "gym/khu_vuc_hoi_vien/"
+            "goi_tap_cua_toi.html"
+        ),
+        {
+            "hoi_vien": hoi_vien,
+            "cac_dang_ky": cac_dang_ky,
+        },
+    )
+
+@vai_tro_required(TaiKhoan.VaiTro.HOI_VIEN)
+def chi_tiet_goi_tap_cua_toi(request, ma_dk):
+    cap_nhat_trang_thai_toan_bo()
+
+    hoi_vien = _lay_hoi_vien_dang_nhap(request)
+
+    dang_ky = get_object_or_404(
+        DangKyGoiTap.objects.select_related(
+            "goi_tap",
+            "hoa_don",
+            "hoa_don__le_tan",
+        ),
+        ma_dk=ma_dk,
+        hoi_vien=hoi_vien,
+    )
+
+    hoa_don = getattr(
+        dang_ky,
+        "hoa_don",
+        None,
+    )
+
+    return render(
+        request,
+        (
+            "gym/khu_vuc_hoi_vien/"
+            "chi_tiet_goi_tap_cua_toi.html"
+        ),
+        {
+            "hoi_vien": hoi_vien,
+            "dang_ky": dang_ky,
+            "hoa_don": hoa_don,
+        },
+    )
+
+@vai_tro_required(TaiKhoan.VaiTro.HOI_VIEN)
+def lich_tap_pt_cua_toi(request):
+    cap_nhat_trang_thai_toan_bo()
+
+    hoi_vien = _lay_hoi_vien_dang_nhap(request)
+    hom_nay = timezone.localdate()
+
+    cac_buoi_tap = (
+        BuoiTapPT.objects
+        .filter(
+            dang_ky__hoi_vien=hoi_vien,
+        )
+        .select_related(
+            "dang_ky",
+            "dang_ky__goi_tap",
+            "huan_luyen_vien",
+        )
+    )
+
+    cac_buoi_tap_sap_toi = (
+        cac_buoi_tap
+        .filter(
+            trang_thai=(
+                BuoiTapPT.TrangThai.DA_LEN_LICH
+            ),
+            ngay_tap__gte=hom_nay,
+        )
+        .order_by(
+            "ngay_tap",
+            "gio_bat_dau",
+            "ma_buoi",
+        )
+    )
+
+    cac_buoi_tap_lich_su = (
+        cac_buoi_tap
+        .exclude(
+            trang_thai=(
+                BuoiTapPT.TrangThai.DA_LEN_LICH
+            ),
+            ngay_tap__gte=hom_nay,
+        )
+        .order_by(
+            "-ngay_tap",
+            "-gio_bat_dau",
+            "ma_buoi",
+        )
+    )
+
+    return render(
+        request,
+        (
+            "gym/khu_vuc_hoi_vien/"
+            "lich_tap_pt_cua_toi.html"
+        ),
+        {
+            "hoi_vien": hoi_vien,
+            "cac_buoi_tap_sap_toi": (
+                cac_buoi_tap_sap_toi
+            ),
+            "cac_buoi_tap_lich_su": (
+                cac_buoi_tap_lich_su
+            ),
+            "so_buoi_sap_toi": (
+                cac_buoi_tap_sap_toi.count()
+            ),
+            "so_buoi_hoan_thanh": (
+                cac_buoi_tap
+                .filter(
+                    trang_thai=(
+                        BuoiTapPT.TrangThai.HOAN_THANH
+                    )
+                )
+                .count()
+            ),
+            "so_buoi_vang": (
+                cac_buoi_tap
+                .filter(
+                    trang_thai=(
+                        BuoiTapPT.TrangThai.VANG
+                    )
+                )
+                .count()
+            ),
+            "so_buoi_huy": (
+                cac_buoi_tap
+                .filter(
+                    trang_thai=(
+                        BuoiTapPT.TrangThai.HUY
+                    )
+                )
+                .count()
+            ),
+        },
+    )
+
+@vai_tro_required(TaiKhoan.VaiTro.HOI_VIEN)
+def lich_su_diem_danh_cua_toi(request):
+    cap_nhat_trang_thai_toan_bo()
+
+    hoi_vien = _lay_hoi_vien_dang_nhap(request)
+    hom_nay = timezone.localdate()
+
+    cac_lan_diem_danh = (
+        DiemDanh.objects
+        .filter(
+            hoi_vien=hoi_vien,
+        )
+        .select_related(
+            "le_tan",
+        )
+        .order_by(
+            "-thoi_gian_diem_danh",
+            "-ma_dd",
+        )
+    )
+
+    lan_diem_danh_gan_nhat = (
+        cac_lan_diem_danh.first()
+    )
+
+    return render(
+        request,
+        (
+            "gym/khu_vuc_hoi_vien/"
+            "lich_su_diem_danh.html"
+        ),
+        {
+            "hoi_vien": hoi_vien,
+            "cac_lan_diem_danh": (
+                cac_lan_diem_danh
+            ),
+            "tong_so_lan_diem_danh": (
+                cac_lan_diem_danh.count()
+            ),
+            "so_lan_diem_danh_hom_nay": (
+                cac_lan_diem_danh
+                .filter(
+                    thoi_gian_diem_danh__date=hom_nay,
+                )
+                .count()
+            ),
+            "lan_diem_danh_gan_nhat": (
+                lan_diem_danh_gan_nhat
+            ),
+        },
+    )
 
 @vai_tro_required(TaiKhoan.VaiTro.HOI_VIEN)
 def trang_hoi_vien(request):
     cap_nhat_trang_thai_toan_bo()
 
+    hoi_vien = _lay_hoi_vien_dang_nhap(request)
+    hom_nay = timezone.localdate()
+
+    cac_dang_ky = (
+        DangKyGoiTap.objects
+        .filter(hoi_vien=hoi_vien)
+        .select_related(
+            "goi_tap",
+            "hoa_don",
+        )
+        .order_by(
+            "-ngay_bat_dau",
+            "ma_dk",
+        )
+    )
+
+    dang_ky_dang_hoat_dong = (
+        cac_dang_ky
+        .filter(
+            trang_thai=(
+                DangKyGoiTap.TrangThai.HOAT_DONG
+            )
+        )
+        .order_by(
+            "ngay_ket_thuc",
+            "ma_dk",
+        )
+        .first()
+    )
+
+    dang_ky_sap_kich_hoat = (
+        cac_dang_ky
+        .filter(
+            trang_thai=(
+                DangKyGoiTap.TrangThai.CHUA_KICH_HOAT
+            )
+        )
+        .order_by(
+            "ngay_bat_dau",
+            "ma_dk",
+        )
+        .first()
+    )
+
+    cac_buoi_tap_pt = (
+        BuoiTapPT.objects
+        .filter(
+            dang_ky__hoi_vien=hoi_vien,
+        )
+        .select_related(
+            "dang_ky",
+            "dang_ky__goi_tap",
+            "huan_luyen_vien",
+        )
+    )
+
+    cac_buoi_tap_pt_sap_toi = (
+        cac_buoi_tap_pt
+        .filter(
+            trang_thai=(
+                BuoiTapPT.TrangThai.DA_LEN_LICH
+            ),
+            ngay_tap__gte=hom_nay,
+        )
+        .order_by(
+            "ngay_tap",
+            "gio_bat_dau",
+            "ma_buoi",
+        )[:3]
+    )
+
+    lan_diem_danh_gan_nhat = (
+        DiemDanh.objects
+        .filter(hoi_vien=hoi_vien)
+        .order_by(
+            "-thoi_gian_diem_danh",
+            "ma_dd",
+        )
+        .first()
+    )
+
+    context = {
+        "hoi_vien": hoi_vien,
+        "tong_so_dang_ky": cac_dang_ky.count(),
+        "dang_ky_dang_hoat_dong": (
+            dang_ky_dang_hoat_dong
+        ),
+        "dang_ky_sap_kich_hoat": (
+            dang_ky_sap_kich_hoat
+        ),
+        "so_buoi_pt_da_len_lich": (
+            cac_buoi_tap_pt
+            .filter(
+                trang_thai=(
+                    BuoiTapPT.TrangThai.DA_LEN_LICH
+                )
+            )
+            .count()
+        ),
+        "cac_buoi_tap_pt_sap_toi": (
+            cac_buoi_tap_pt_sap_toi
+        ),
+        "lan_diem_danh_gan_nhat": (
+            lan_diem_danh_gan_nhat
+        ),
+    }
+
     return render(
         request,
         "gym/trang_chu/hoi_vien.html",
+        context,
     )

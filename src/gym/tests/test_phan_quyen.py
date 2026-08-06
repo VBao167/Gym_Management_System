@@ -35,6 +35,15 @@ from gym.services.trang_thai_hoi_vien import (
 
 class PhanQuyenVaiTroTests(TestCase):
     def setUp(self):
+        self.hoi_vien_phan_quyen = tao_hoi_vien(
+            ho_ten="Hội viên kiểm thử phân quyền",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2001, 1, 1),
+            sdt="0939000001",
+            email="hoi.vien.phan.quyen@example.com",
+            dia_chi="TP.HCM",
+        )
+
         self.tai_khoan_theo_vai_tro = {
             TaiKhoan.VaiTro.ADMIN:
                 TaiKhoan.objects.create_user(
@@ -54,12 +63,9 @@ class PhanQuyenVaiTroTests(TestCase):
                     password="1",
                     vai_tro=TaiKhoan.VaiTro.PT,
                 ),
-            TaiKhoan.VaiTro.HOI_VIEN:
-                TaiKhoan.objects.create_user(
-                    username="kiem_thu_hoi_vien",
-                    password="1",
-                    vai_tro=TaiKhoan.VaiTro.HOI_VIEN,
-                ),
+            TaiKhoan.VaiTro.HOI_VIEN: (
+                self.hoi_vien_phan_quyen.tai_khoan
+),
         }
 
         self.khu_vuc_theo_vai_tro = {
@@ -77,7 +83,7 @@ class PhanQuyenVaiTroTests(TestCase):
             ),
             TaiKhoan.VaiTro.HOI_VIEN: (
                 "gym:trang_hoi_vien",
-                "Khu vực Hội viên.",
+                "Tổng quan Hội viên",
             ),
         }
 

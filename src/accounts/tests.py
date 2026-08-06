@@ -1,10 +1,12 @@
 import re
+from datetime import date
 
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import TaiKhoan
+from gym.models import HoiVien
 
 
 class TaiKhoanModelTests(TestCase):
@@ -83,6 +85,16 @@ class XacThucTaiKhoanTests(TestCase):
             is_active=False,
         )
 
+        self.hoi_vien = HoiVien.objects.create(
+            tai_khoan=self.tai_khoan_hoat_dong,
+            ho_ten="Hội viên kiểm thử xác thực",
+            gioi_tinh="Nam",
+            ngay_sinh=date(2001, 1, 1),
+            sdt="0919000001",
+            email="hoi.vien.xac.thuc@example.com",
+            dia_chi="TP.HCM",
+        )
+
     def test_trang_dang_nhap_hien_thi_binh_thuong(self):
         response = self.client.get(
             reverse("accounts:dang_nhap")
@@ -140,7 +152,7 @@ class XacThucTaiKhoanTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(
             response,
-            "Khu vực Hội viên.",
+            "Tổng quan Hội viên",
         )
 
     def test_sai_mat_khau_khong_dang_nhap(self):

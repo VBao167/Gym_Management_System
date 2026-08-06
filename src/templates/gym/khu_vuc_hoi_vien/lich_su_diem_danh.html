@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Lịch sử điểm danh | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Lịch sử điểm danh
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Lịch sử điểm danh của tôi</h2>
+
+        <p>
+          Theo dõi các lần bạn đã đến tập
+          và được ghi nhận tại quầy Lễ tân.
+        </p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <article class="dashboard-card">
+        <h3>Tổng lượt điểm danh</h3>
+
+        <p class="dashboard-value">
+          {{ tong_so_lan_diem_danh }}
+        </p>
+      </article>
+
+      <article class="dashboard-card">
+        <h3>Điểm danh hôm nay</h3>
+
+        <p class="dashboard-value">
+          {{ so_lan_diem_danh_hom_nay }}
+        </p>
+      </article>
+
+      <article class="dashboard-card">
+        <h3>Lần gần nhất</h3>
+
+        <p class="dashboard-value">
+          {% if lan_diem_danh_gan_nhat %}
+            {{ lan_diem_danh_gan_nhat.thoi_gian_diem_danh|date:"d/m/Y" }}
+          {% else %}
+            Chưa có
+          {% endif %}
+        </p>
+      </article>
+
+      <article class="dashboard-card">
+        <h3>Giờ gần nhất</h3>
+
+        <p class="dashboard-value">
+          {% if lan_diem_danh_gan_nhat %}
+            {{ lan_diem_danh_gan_nhat.thoi_gian_diem_danh|date:"H:i" }}
+          {% else %}
+            Chưa có
+          {% endif %}
+        </p>
+      </article>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Danh sách các lần điểm danh</h3>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã điểm danh</th>
+              <th>Ngày</th>
+              <th>Giờ</th>
+              <th>Lễ tân ghi nhận</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for diem_danh in cac_lan_diem_danh %}
+              <tr>
+                <td>
+                  <strong>{{ diem_danh.ma_dd }}</strong>
+                </td>
+
+                <td>
+                  {{ diem_danh.thoi_gian_diem_danh|date:"d/m/Y" }}
+                </td>
+
+                <td>
+                  {{ diem_danh.thoi_gian_diem_danh|date:"H:i" }}
+                </td>
+
+                <td>
+                  {{ diem_danh.le_tan.ma_lt }}
+                  — {{ diem_danh.le_tan.ho_ten }}
+                </td>
+
+                <td>
+                  {{ diem_danh.ghi_chu|default:"Không có" }}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="empty-state">
+                  Bạn chưa có lịch sử điểm danh.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+{% endblock %}

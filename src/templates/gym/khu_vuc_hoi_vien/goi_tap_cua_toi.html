@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Gói tập của tôi | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Gói tập của tôi
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Danh sách gói tập đã đăng ký</h2>
+
+        <p>
+          Theo dõi các gói tập theo thứ tự đăng ký
+          và xem thông tin chi tiết của từng gói.
+        </p>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã đăng ký</th>
+            <th>Gói tập</th>
+            <th>Ngày đăng ký</th>
+            <th>Thời gian sử dụng</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for dang_ky in cac_dang_ky %}
+            <tr>
+              <td>
+                <strong>{{ dang_ky.ma_dk }}</strong>
+              </td>
+
+              <td>
+                {{ dang_ky.goi_tap.ten_goi }}
+              </td>
+
+              <td>
+                {{ dang_ky.ngay_dang_ky|date:"d/m/Y" }}
+              </td>
+
+              <td>
+                {{ dang_ky.ngay_bat_dau|date:"d/m/Y" }}
+                –
+                {{ dang_ky.ngay_ket_thuc|date:"d/m/Y" }}
+              </td>
+
+              <td>
+                {{ dang_ky.get_trang_thai_display }}
+              </td>
+
+              <td>
+                <a
+                  href="{% url 'gym:chi_tiet_goi_tap_cua_toi' dang_ky.ma_dk %}"
+                >
+                  Xem chi tiết
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="empty-state">
+                Bạn chưa có đăng ký gói tập nào.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

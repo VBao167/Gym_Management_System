@@ -158,33 +158,41 @@
                 </a>
 
             {% elif request.user.vai_tro == "HoiVien" %}
-              <p class="sidebar-heading">KHU VỰC HỘI VIÊN</p>
+                <p class="sidebar-heading">
+                    KHU VỰC HỘI VIÊN
+                </p>
 
-              <a
-                href="{% url 'gym:trang_hoi_vien' %}"
-                class="sidebar-link is-active"
-              >
-                <span class="sidebar-icon">01</span>
-                Tổng quan
-              </a>
+                <a
+                    href="{% url 'gym:trang_hoi_vien' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'trang_hoi_vien' %} is-active{% endif %}"
+                >
+                    <span class="sidebar-icon">01</span>
+                    Tổng quan
+                </a>
 
-              <span class="sidebar-link is-disabled">
-                <span class="sidebar-icon">02</span>
-                Gói tập của tôi
-              </span>
+                <a
+                    href="{% url 'gym:goi_tap_cua_toi' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'goi_tap_cua_toi' or request.resolver_match.url_name == 'chi_tiet_goi_tap_cua_toi' %} is-active{% endif %}"
+                >
+                    <span class="sidebar-icon">02</span>
+                    Gói tập của tôi
+                </a>
 
-            <a
-                href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">03</span>
-                Lịch tập PT
-            </a>
+                <a
+                    href="{% url 'gym:lich_tap_pt_cua_toi' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'lich_tap_pt_cua_toi' %} is-active{% endif %}"
+                >
+                    <span class="sidebar-icon">03</span>
+                    Lịch tập PT
+                </a>
 
-              <span class="sidebar-link is-disabled">
-                <span class="sidebar-icon">04</span>
-                Lịch sử điểm danh
-              </span>
+                <a
+                    href="{% url 'gym:lich_su_diem_danh_cua_toi' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'lich_su_diem_danh_cua_toi' %} is-active{% endif %}"
+                >
+                    <span class="sidebar-icon">04</span>
+                    Lịch sử điểm danh
+                </a>
             {% endif %}
           </nav>
 

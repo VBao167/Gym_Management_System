@@ -1,7 +1,299 @@
-{% extends "base.html" %} {% block title %} Hội viên | Hệ thống quản lý phòng
-Gym {% endblock %} {% block content %}
-<section>
-  <h2>Khu vực Hội viên.</h2>
-  <p>Chào mừng {{ request.user.username }}.</p>
-</section>
+{% extends "base.html" %}
+
+{% block title %}
+  Khu vực Hội viên | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Khu vực Hội viên
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Tổng quan Hội viên</h2>
+
+        <p>
+          Xin chào {{ hoi_vien.ho_ten }}.
+          Theo dõi hồ sơ, quyền tập và lịch PT của bạn.
+        </p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <article class="dashboard-card">
+        <h3>Trạng thái quyền tập</h3>
+
+        <p class="dashboard-value">
+          {% if hoi_vien.trang_thai %}
+            Hoạt động
+          {% else %}
+            Chưa có
+          {% endif %}
+        </p>
+      </article>
+
+      <article class="dashboard-card">
+        <h3>Tổng số đăng ký gói</h3>
+
+        <p class="dashboard-value">
+          {{ tong_so_dang_ky }}
+        </p>
+      </article>
+
+      <article class="dashboard-card">
+        <h3>Buổi PT đã lên lịch</h3>
+
+        <p class="dashboard-value">
+          {{ so_buoi_pt_da_len_lich }}
+        </p>
+      </article>
+
+      <article class="dashboard-card">
+        <h3>Điểm danh gần nhất</h3>
+
+        <p class="dashboard-value">
+          {% if lan_diem_danh_gan_nhat %}
+            {{ lan_diem_danh_gan_nhat.thoi_gian_diem_danh|date:"d/m/Y" }}
+          {% else %}
+            Chưa có
+          {% endif %}
+        </p>
+      </article>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Thông tin cá nhân</h3>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span>Mã Hội viên</span>
+          <strong>{{ hoi_vien.ma_hv }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Họ và tên</span>
+          <strong>{{ hoi_vien.ho_ten }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Số điện thoại</span>
+          <strong>{{ hoi_vien.sdt }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Email</span>
+          <strong>{{ hoi_vien.email }}</strong>
+        </div>
+
+        <div class="detail-item detail-item-full">
+          <span>Địa chỉ</span>
+          <strong>{{ hoi_vien.dia_chi }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Ngày tham gia</span>
+          <strong>
+            {{ hoi_vien.ngay_tham_gia|date:"d/m/Y" }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Trạng thái Hội viên</span>
+
+          {% if hoi_vien.trang_thai %}
+            <strong class="status-badge status-active">
+              Đang hoạt động
+            </strong>
+          {% else %}
+            <strong class="status-badge status-inactive">
+              Không có gói đang hiệu lực
+            </strong>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Gói tập đang hiệu lực</h3>
+      </div>
+
+      {% if dang_ky_dang_hoat_dong %}
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span>Mã đăng ký</span>
+            <strong>
+              {{ dang_ky_dang_hoat_dong.ma_dk }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Gói tập</span>
+            <strong>
+              {{ dang_ky_dang_hoat_dong.goi_tap.ten_goi }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Ngày bắt đầu</span>
+            <strong>
+              {{ dang_ky_dang_hoat_dong.ngay_bat_dau|date:"d/m/Y" }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Ngày kết thúc</span>
+            <strong>
+              {{ dang_ky_dang_hoat_dong.ngay_ket_thuc|date:"d/m/Y" }}
+            </strong>
+          </div>
+
+          {% if dang_ky_dang_hoat_dong.so_buoi_pt_dang_ky > 0 %}
+            <div class="detail-item">
+              <span>Buổi PT đăng ký</span>
+              <strong>
+                {{ dang_ky_dang_hoat_dong.so_buoi_pt_dang_ky }}
+              </strong>
+            </div>
+
+            <div class="detail-item">
+              <span>Buổi PT đã dùng</span>
+              <strong>
+                {{ dang_ky_dang_hoat_dong.so_buoi_pt_da_dung }}
+              </strong>
+            </div>
+
+            <div class="detail-item">
+              <span>Buổi PT đã lên lịch</span>
+              <strong>
+                {{ dang_ky_dang_hoat_dong.so_buoi_pt_da_len_lich }}
+              </strong>
+            </div>
+
+            <div class="detail-item">
+              <span>Buổi PT có thể xếp</span>
+              <strong>
+                {{ dang_ky_dang_hoat_dong.so_buoi_pt_co_the_xep_lich }}
+              </strong>
+            </div>
+          {% endif %}
+        </div>
+      {% else %}
+        <p>
+          Hiện tại bạn chưa có gói tập đang hiệu lực.
+        </p>
+      {% endif %}
+    </div>
+
+    {% if dang_ky_sap_kich_hoat %}
+      <div class="detail-card">
+        <div class="detail-card-heading">
+          <h3>Gói tập tiếp theo</h3>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span>Mã đăng ký</span>
+            <strong>
+              {{ dang_ky_sap_kich_hoat.ma_dk }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Gói tập</span>
+            <strong>
+              {{ dang_ky_sap_kich_hoat.goi_tap.ten_goi }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Ngày bắt đầu</span>
+            <strong>
+              {{ dang_ky_sap_kich_hoat.ngay_bat_dau|date:"d/m/Y" }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Ngày kết thúc</span>
+            <strong>
+              {{ dang_ky_sap_kich_hoat.ngay_ket_thuc|date:"d/m/Y" }}
+            </strong>
+          </div>
+
+          {% if dang_ky_sap_kich_hoat.so_buoi_pt_dang_ky > 0 %}
+            <div class="detail-item">
+              <span>Buổi PT đăng ký</span>
+              <strong>
+                {{ dang_ky_sap_kich_hoat.so_buoi_pt_dang_ky }}
+              </strong>
+            </div>
+
+            <div class="detail-item">
+              <span>Buổi PT có thể xếp</span>
+              <strong>
+                {{ dang_ky_sap_kich_hoat.so_buoi_pt_co_the_xep_lich }}
+              </strong>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Buổi tập PT sắp tới</h3>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã buổi</th>
+              <th>Gói PT</th>
+              <th>Huấn luyện viên</th>
+              <th>Ngày tập</th>
+              <th>Thời gian</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for buoi_tap in cac_buoi_tap_pt_sap_toi %}
+              <tr>
+                <td>
+                  <strong>{{ buoi_tap.ma_buoi }}</strong>
+                </td>
+
+                <td>
+                  {{ buoi_tap.dang_ky.goi_tap.ten_goi }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.huan_luyen_vien.ho_ten }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.gio_bat_dau|time:"H:i" }}
+                  – {{ buoi_tap.gio_ket_thuc|time:"H:i" }}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="empty-state">
+                  Bạn chưa có buổi tập PT sắp tới.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 {% endblock %}

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Lịch tập PT của tôi | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Lịch tập PT của tôi
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Lịch tập PT của tôi</h2>
+
+        <p>
+          Theo dõi lịch tập được phân công,
+          Huấn luyện viên phụ trách và kết quả
+          của từng buổi tập.
+        </p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <article class="dashboard-card">
+        <h3>Buổi sắp tới</h3>
+        <p class="dashboard-value">
+          {{ so_buoi_sap_toi }}
+        </p>
+      </article>
+
+      <article class="dashboard-card">
+        <h3>Đã hoàn thành</h3>
+        <p class="dashboard-value">
+          {{ so_buoi_hoan_thanh }}
+        </p>
+      </article>
+
+      <article class="dashboard-card">
+        <h3>Vắng</h3>
+        <p class="dashboard-value">
+          {{ so_buoi_vang }}
+        </p>
+      </article>
+
+      <article class="dashboard-card">
+        <h3>Đã hủy</h3>
+        <p class="dashboard-value">
+          {{ so_buoi_huy }}
+        </p>
+      </article>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Buổi tập sắp tới</h3>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã buổi</th>
+              <th>Gói PT</th>
+              <th>Huấn luyện viên</th>
+              <th>Ngày tập</th>
+              <th>Thời gian</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for buoi_tap in cac_buoi_tap_sap_toi %}
+              <tr>
+                <td>
+                  <strong>{{ buoi_tap.ma_buoi }}</strong>
+                </td>
+
+                <td>
+                  {{ buoi_tap.dang_ky.ma_dk }}
+                  — {{ buoi_tap.dang_ky.goi_tap.ten_goi }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.huan_luyen_vien.ma_pt }}
+                  — {{ buoi_tap.huan_luyen_vien.ho_ten }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.gio_bat_dau|time:"H:i" }}
+                  –
+                  {{ buoi_tap.gio_ket_thuc|time:"H:i" }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.ghi_chu|default:"Không có" }}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" class="empty-state">
+                  Bạn chưa có buổi tập PT sắp tới.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Lịch sử buổi tập PT</h3>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã buổi</th>
+              <th>Gói PT</th>
+              <th>Huấn luyện viên</th>
+              <th>Ngày tập</th>
+              <th>Thời gian</th>
+              <th>Trạng thái</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for buoi_tap in cac_buoi_tap_lich_su %}
+              <tr>
+                <td>
+                  <strong>{{ buoi_tap.ma_buoi }}</strong>
+                </td>
+
+                <td>
+                  {{ buoi_tap.dang_ky.ma_dk }}
+                  — {{ buoi_tap.dang_ky.goi_tap.ten_goi }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.huan_luyen_vien.ma_pt }}
+                  — {{ buoi_tap.huan_luyen_vien.ho_ten }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.gio_bat_dau|time:"H:i" }}
+                  –
+                  {{ buoi_tap.gio_ket_thuc|time:"H:i" }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.get_trang_thai_display }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.ghi_chu|default:"Không có" }}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" class="empty-state">
+                  Bạn chưa có lịch sử buổi tập PT.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+{% endblock %}

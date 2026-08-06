@@ -168,6 +168,28 @@ urlpatterns = [
         name="chi_tiet_buoi_tap_pt",
     ),
 
+    # Khu vực Hội viên
+    path(
+        "hoi-vien/goi-tap/",
+        views.goi_tap_cua_toi,
+        name="goi_tap_cua_toi",
+    ),
+    path(
+        "hoi-vien/goi-tap/<str:ma_dk>/",
+        views.chi_tiet_goi_tap_cua_toi,
+        name="chi_tiet_goi_tap_cua_toi",
+    ),
+    path(
+        "hoi-vien/lich-tap-pt/",
+        views.lich_tap_pt_cua_toi,
+        name="lich_tap_pt_cua_toi",
+    ),
+    path(
+        "hoi-vien/lich-su-diem-danh/",
+        views.lich_su_diem_danh_cua_toi,
+        name="lich_su_diem_danh_cua_toi",
+    ),
+
     # Trang chính theo vai trò
     path(
         "le-tan/",

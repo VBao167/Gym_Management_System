@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Chi tiết gói tập | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Chi tiết gói tập
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>
+          {{ dang_ky.ma_dk }}
+          — {{ dang_ky.goi_tap.ten_goi }}
+        </h2>
+
+        <p>
+          Thông tin đăng ký, quyền lợi sử dụng
+          và thanh toán của gói tập.
+        </p>
+      </div>
+
+      <a
+        class="secondary-button"
+        href="{% url 'gym:goi_tap_cua_toi' %}"
+      >
+        Quay lại danh sách
+      </a>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Thông tin gói tập</h3>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span>Mã đăng ký</span>
+          <strong>{{ dang_ky.ma_dk }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Tên gói tập</span>
+          <strong>
+            {{ dang_ky.goi_tap.ten_goi }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Ngày đăng ký</span>
+          <strong>
+            {{ dang_ky.ngay_dang_ky|date:"d/m/Y" }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Thời hạn</span>
+          <strong>
+            {{ dang_ky.goi_tap.thoi_han_ngay }} ngày
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Ngày bắt đầu</span>
+          <strong>
+            {{ dang_ky.ngay_bat_dau|date:"d/m/Y" }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Ngày kết thúc</span>
+          <strong>
+            {{ dang_ky.ngay_ket_thuc|date:"d/m/Y" }}
+          </strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Trạng thái</span>
+          <strong>
+            {{ dang_ky.get_trang_thai_display }}
+          </strong>
+        </div>
+
+        <div class="detail-item detail-item-full">
+          <span>Mô tả gói tập</span>
+          <strong>
+            {{ dang_ky.goi_tap.mo_ta|default:"Không có" }}
+          </strong>
+        </div>
+
+        <div class="detail-item detail-item-full">
+          <span>Ghi chú đăng ký</span>
+          <strong>
+            {{ dang_ky.ghi_chu|default:"Không có" }}
+          </strong>
+        </div>
+      </div>
+    </div>
+
+    {% if dang_ky.so_buoi_pt_dang_ky > 0 %}
+      <div class="detail-card">
+        <div class="detail-card-heading">
+          <h3>Quyền lợi PT</h3>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span>Số buổi PT đăng ký</span>
+            <strong>
+              {{ dang_ky.so_buoi_pt_dang_ky }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Đã hoàn thành</span>
+            <strong>
+              {{ dang_ky.so_buoi_pt_da_dung }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Đã lên lịch</span>
+            <strong>
+              {{ dang_ky.so_buoi_pt_da_len_lich }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Còn lại trong gói</span>
+            <strong>
+              {{ dang_ky.so_buoi_pt_con_lai }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Có thể xếp thêm</span>
+            <strong>
+              {{ dang_ky.so_buoi_pt_co_the_xep_lich }}
+            </strong>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Thông tin thanh toán</h3>
+      </div>
+
+      {% if hoa_don %}
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span>Giá tại thời điểm đăng ký</span>
+            <strong>
+              {{ hoa_don.tong_tien|floatformat:0 }} đ
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Ngày giờ thanh toán</span>
+            <strong>
+              {{ hoa_don.ngay_lap|date:"d/m/Y H:i" }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Phương thức thanh toán</span>
+            <strong>
+              {{ hoa_don.get_phuong_thuc_thanh_toan_display }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Lễ tân thực hiện</span>
+            <strong>
+              {{ hoa_don.le_tan.ma_lt }}
+              — {{ hoa_don.le_tan.ho_ten }}
+            </strong>
+          </div>
+
+          <div class="detail-item detail-item-full">
+            <span>Ghi chú thanh toán</span>
+            <strong>
+              {{ hoa_don.ghi_chu|default:"Không có" }}
+            </strong>
+          </div>
+        </div>
+      {% else %}
+        <p class="empty-state">
+          Chưa có thông tin thanh toán cho đăng ký này.
+        </p>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}
