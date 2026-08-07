@@ -91,10 +91,13 @@
                 Điểm danh
             </a>
 
-              <span class="sidebar-link is-disabled">
+            <a
+                href="{% url 'gym:bao_cao_thong_ke' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'bao_cao_thong_ke' %} is-active{% endif %}"
+            >
                 <span class="sidebar-icon">08</span>
                 Báo cáo
-              </span>
+            </a>
 
             {% elif request.user.vai_tro == "LeTan" %}
               <p class="sidebar-heading">KHU VỰC LỄ TÂN</p>

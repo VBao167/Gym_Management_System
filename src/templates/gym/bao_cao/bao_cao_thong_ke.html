@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Báo cáo - Thống kê | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Báo cáo - Thống kê
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Báo cáo hoạt động hệ thống</h2>
+
+        <p>
+          Theo dõi doanh thu, đăng ký gói,
+          điểm danh và hoạt động tập PT
+          theo khoảng thời gian.
+        </p>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Chọn khoảng thời gian</h3>
+      </div>
+
+      <form method="get">
+        <div class="detail-grid">
+          <div class="form-group">
+            <label for="id_tu_ngay">
+              Từ ngày
+            </label>
+
+            <input
+              id="id_tu_ngay"
+              class="form-input"
+              type="date"
+              name="tu_ngay"
+              value="{{ tu_ngay|date:'Y-m-d' }}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="id_den_ngay">
+              Đến ngày
+            </label>
+
+            <input
+              id="id_den_ngay"
+              class="form-input"
+              type="date"
+              name="den_ngay"
+              value="{{ den_ngay|date:'Y-m-d' }}"
+            />
+          </div>
+        </div>
+
+        {% if thong_bao_loi %}
+          <p class="error-message">
+            {{ thong_bao_loi }}
+          </p>
+        {% endif %}
+
+        <div class="form-actions">
+          <button
+            class="primary-button"
+            type="submit"
+          >
+            Xem báo cáo
+          </button>
+        </div>
+      </form>
+    </div>
+
+    {% if thong_ke %}
+      <div class="dashboard-grid">
+        <article class="dashboard-card">
+          <h3>Tổng doanh thu</h3>
+
+          <p class="dashboard-value">
+            {{ thong_ke.tong_doanh_thu|floatformat:0 }}đ
+          </p>
+        </article>
+
+        <article class="dashboard-card">
+          <h3>Đăng ký gói</h3>
+
+          <p class="dashboard-value">
+            {{ thong_ke.so_dang_ky_goi }}
+          </p>
+        </article>
+
+        <article class="dashboard-card">
+          <h3>Lượt điểm danh</h3>
+
+          <p class="dashboard-value">
+            {{ thong_ke.so_luot_diem_danh }}
+          </p>
+        </article>
+
+        <article class="dashboard-card">
+          <h3>Tổng buổi PT</h3>
+
+          <p class="dashboard-value">
+            {{ thong_ke.tong_buoi_pt }}
+          </p>
+        </article>
+      </div>
+
+      <div class="detail-card">
+        <div class="detail-card-heading">
+          <h3>
+            Tình hình buổi tập PT
+          </h3>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Đã lên lịch</th>
+                <th>Hoàn thành</th>
+                <th>Vắng</th>
+                <th>Hủy</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td>
+                  {{ thong_ke.so_buoi_da_len_lich }}
+                </td>
+
+                <td>
+                  {{ thong_ke.so_buoi_hoan_thanh }}
+                </td>
+
+                <td>
+                  {{ thong_ke.so_buoi_vang }}
+                </td>
+
+                <td>
+                  {{ thong_ke.so_buoi_huy }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

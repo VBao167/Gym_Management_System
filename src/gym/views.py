@@ -51,6 +51,9 @@ from gym.services.buoi_tap_pt import (
     tao_buoi_tap_pt,
     tao_buoi_tap_pt_cho_hoi_vien,
 )
+from gym.services.bao_cao import (
+    lay_thong_ke_bao_cao,
+)
 
 CAU_HINH_NHAN_VIEN = {
     "le-tan": {
@@ -108,6 +111,72 @@ def trang_quan_tri(request):
         request,
         "gym/trang_chu/quan_tri.html",
         context,
+    )
+
+
+@vai_tro_required(TaiKhoan.VaiTro.ADMIN)
+def bao_cao_thong_ke(request):
+    cap_nhat_trang_thai_toan_bo()
+
+    hom_nay = timezone.localdate()
+
+    tu_ngay = hom_nay.replace(day=1)
+    den_ngay = hom_nay
+
+    thong_bao_loi = ""
+
+    gia_tri_tu_ngay = request.GET.get(
+        "tu_ngay",
+        "",
+    ).strip()
+
+    gia_tri_den_ngay = request.GET.get(
+        "den_ngay",
+        "",
+    ).strip()
+
+    if gia_tri_tu_ngay:
+        try:
+            tu_ngay = date.fromisoformat(
+                gia_tri_tu_ngay
+            )
+        except ValueError:
+            thong_bao_loi = (
+                "Từ ngày không hợp lệ."
+            )
+
+    if gia_tri_den_ngay:
+        try:
+            den_ngay = date.fromisoformat(
+                gia_tri_den_ngay
+            )
+        except ValueError:
+            thong_bao_loi = (
+                "Đến ngày không hợp lệ."
+            )
+
+    thong_ke = None
+
+    if not thong_bao_loi:
+        if tu_ngay > den_ngay:
+            thong_bao_loi = (
+                "Từ ngày không được sau Đến ngày."
+            )
+        else:
+            thong_ke = lay_thong_ke_bao_cao(
+                tu_ngay=tu_ngay,
+                den_ngay=den_ngay,
+            )
+
+    return render(
+        request,
+        "gym/bao_cao/bao_cao_thong_ke.html",
+        {
+            "tu_ngay": tu_ngay,
+            "den_ngay": den_ngay,
+            "thong_ke": thong_ke,
+            "thong_bao_loi": thong_bao_loi,
+        },
     )
 
 

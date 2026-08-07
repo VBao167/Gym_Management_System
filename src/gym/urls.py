@@ -11,6 +11,11 @@ urlpatterns = [
         views.trang_quan_tri,
         name="trang_quan_tri",
     ),
+    path(
+        "quan-tri/bao-cao/",
+        views.bao_cao_thong_ke,
+        name="bao_cao_thong_ke",
+    ),
 
     # Quản lý Hội viên dành cho Admin và Lễ tân
     path(
