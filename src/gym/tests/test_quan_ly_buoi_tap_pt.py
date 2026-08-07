@@ -149,6 +149,460 @@ class QuanLyBuoiTapPTTests(TestCase):
         self.url_tao = reverse(
             "gym:tao_buoi_tap_pt_moi"
         )
+        self.url_trang_pt = reverse(
+            "gym:trang_pt"
+        )
+
+    def tao_buoi_cho_lich_pt(
+        self,
+        *,
+        huan_luyen_vien=None,
+        ngay_tap=None,
+        gio_bat_dau=time(9, 0),
+        gio_ket_thuc=time(10, 0),
+        trang_thai=None,
+    ):
+        self.dang_ky_pt_tuong_lai.so_buoi_pt_dang_ky = 20
+        self.dang_ky_pt_tuong_lai.save(
+            update_fields=["so_buoi_pt_dang_ky"],
+        )
+
+        buoi_tap = tao_buoi_tap_pt(
+            dang_ky=self.dang_ky_pt_tuong_lai,
+            huan_luyen_vien=(
+                huan_luyen_vien or self.pt_1
+            ),
+            le_tan=self.le_tan,
+            ngay_tap=(
+                ngay_tap or self.hom_nay
+            ),
+            gio_bat_dau=gio_bat_dau,
+            gio_ket_thuc=gio_ket_thuc,
+        )
+
+        if trang_thai is not None:
+            BuoiTapPT.objects.filter(
+                pk=buoi_tap.pk,
+            ).update(
+                trang_thai=trang_thai,
+            )
+
+            buoi_tap.refresh_from_db()
+
+        return buoi_tap
+
+    def test_trang_chu_pt_hien_lich_hom_nay_cua_minh_theo_gio(
+        self
+    ):
+        buoi_muon = self.tao_buoi_cho_lich_pt(
+            gio_bat_dau=time(10, 0),
+            gio_ket_thuc=time(11, 0),
+        )
+
+        buoi_som = self.tao_buoi_cho_lich_pt(
+            gio_bat_dau=time(8, 0),
+            gio_ket_thuc=time(9, 0),
+        )
+
+        buoi_ngay_mai = self.tao_buoi_cho_lich_pt(
+            ngay_tap=(
+                self.hom_nay
+                + timedelta(days=1)
+            ),
+            gio_bat_dau=time(13, 0),
+            gio_ket_thuc=time(14, 0),
+        )
+
+        buoi_pt_khac = self.tao_buoi_cho_lich_pt(
+            huan_luyen_vien=self.pt_2,
+            gio_bat_dau=time(14, 0),
+            gio_ket_thuc=time(15, 0),
+        )
+
+        self.client.force_login(
+            self.pt_1.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_trang_pt
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_buoi_tap_hom_nay"
+                ]
+            ),
+            [
+                buoi_som,
+                buoi_muon,
+            ],
+        )
+
+        self.assertNotContains(
+            response,
+            buoi_ngay_mai.ma_buoi,
+        )
+
+        self.assertNotContains(
+            response,
+            buoi_pt_khac.ma_buoi,
+        )
+
+    def test_trang_chu_pt_loc_theo_trang_thai(
+        self
+    ):
+        buoi_da_len_lich = (
+            self.tao_buoi_cho_lich_pt(
+                gio_bat_dau=time(8, 0),
+                gio_ket_thuc=time(9, 0),
+            )
+        )
+
+        buoi_vang = self.tao_buoi_cho_lich_pt(
+            gio_bat_dau=time(10, 0),
+            gio_ket_thuc=time(11, 0),
+            trang_thai=(
+                BuoiTapPT.TrangThai.VANG
+            ),
+        )
+
+        self.client.force_login(
+            self.pt_1.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_trang_pt,
+            {
+                "trang_thai": (
+                    BuoiTapPT.TrangThai.VANG
+                ),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            response.context[
+                "trang_thai_duoc_chon"
+            ],
+            BuoiTapPT.TrangThai.VANG,
+        )
+
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_buoi_tap_hom_nay"
+                ]
+            ),
+            [
+                buoi_vang,
+            ],
+        )
+
+        self.assertContains(
+            response,
+            buoi_vang.ma_buoi,
+        )
+
+        self.assertNotContains(
+            response,
+            buoi_da_len_lich.ma_buoi,
+        )
+
+    def test_trang_chu_pt_trang_thai_sai_quay_ve_tat_ca(
+        self
+    ):
+        buoi_1 = self.tao_buoi_cho_lich_pt(
+            gio_bat_dau=time(8, 0),
+            gio_ket_thuc=time(9, 0),
+        )
+
+        buoi_2 = self.tao_buoi_cho_lich_pt(
+            gio_bat_dau=time(10, 0),
+            gio_ket_thuc=time(11, 0),
+            trang_thai=(
+                BuoiTapPT.TrangThai.VANG
+            ),
+        )
+
+        self.client.force_login(
+            self.pt_1.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_trang_pt,
+            {
+                "trang_thai": "TrangThaiKhongTonTai",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            response.context[
+                "trang_thai_duoc_chon"
+            ],
+            "",
+        )
+
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_buoi_tap_hom_nay"
+                ]
+            ),
+            [
+                buoi_1,
+                buoi_2,
+            ],
+        )
+
+    def test_lich_pt_cua_toi_mac_dinh_hom_nay(
+        self
+    ):
+        buoi_hom_nay = (
+            self.tao_buoi_cho_lich_pt()
+        )
+
+        buoi_ngay_mai = self.tao_buoi_cho_lich_pt(
+            ngay_tap=(
+                self.hom_nay
+                + timedelta(days=1)
+            ),
+            gio_bat_dau=time(11, 0),
+            gio_ket_thuc=time(12, 0),
+        )
+
+        self.client.force_login(
+            self.pt_1.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_danh_sach
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertTrue(
+            response.context[
+                "la_lich_ca_nhan"
+            ]
+        )
+
+        self.assertEqual(
+            response.context[
+                "ngay_duoc_chon"
+            ],
+            self.hom_nay,
+        )
+
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_buoi_tap"
+                ]
+            ),
+            [
+                buoi_hom_nay,
+            ],
+        )
+
+        self.assertNotContains(
+            response,
+            buoi_ngay_mai.ma_buoi,
+        )
+
+    def test_lich_pt_cua_toi_chon_ngay_khac(
+        self
+    ):
+        ngay_mai = (
+            self.hom_nay
+            + timedelta(days=1)
+        )
+
+        buoi_hom_nay = (
+            self.tao_buoi_cho_lich_pt()
+        )
+
+        buoi_ngay_mai = self.tao_buoi_cho_lich_pt(
+            ngay_tap=ngay_mai,
+            gio_bat_dau=time(8, 0),
+            gio_ket_thuc=time(9, 0),
+        )
+
+        self.client.force_login(
+            self.pt_1.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_danh_sach,
+            {
+                "ngay": ngay_mai.isoformat(),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            response.context[
+                "ngay_duoc_chon"
+            ],
+            ngay_mai,
+        )
+
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_buoi_tap"
+                ]
+            ),
+            [
+                buoi_ngay_mai,
+            ],
+        )
+
+        self.assertNotContains(
+            response,
+            buoi_hom_nay.ma_buoi,
+        )
+
+    def test_lich_pt_cua_toi_loc_ngay_va_trang_thai(
+        self
+    ):
+        ngay_mai = (
+            self.hom_nay
+            + timedelta(days=1)
+        )
+
+        buoi_da_len_lich = (
+            self.tao_buoi_cho_lich_pt(
+                ngay_tap=ngay_mai,
+                gio_bat_dau=time(8, 0),
+                gio_ket_thuc=time(9, 0),
+            )
+        )
+
+        buoi_vang = self.tao_buoi_cho_lich_pt(
+            ngay_tap=ngay_mai,
+            gio_bat_dau=time(10, 0),
+            gio_ket_thuc=time(11, 0),
+            trang_thai=(
+                BuoiTapPT.TrangThai.VANG
+            ),
+        )
+
+        self.client.force_login(
+            self.pt_1.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_danh_sach,
+            {
+                "ngay": ngay_mai.isoformat(),
+                "trang_thai": (
+                    BuoiTapPT.TrangThai.VANG
+                ),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            response.context[
+                "ngay_duoc_chon"
+            ],
+            ngay_mai,
+        )
+
+        self.assertEqual(
+            response.context[
+                "trang_thai_duoc_chon"
+            ],
+            BuoiTapPT.TrangThai.VANG,
+        )
+
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_buoi_tap"
+                ]
+            ),
+            [
+                buoi_vang,
+            ],
+        )
+
+        self.assertNotContains(
+            response,
+            buoi_da_len_lich.ma_buoi,
+        )
+
+    def test_lich_pt_cua_toi_ngay_sai_quay_ve_hom_nay(
+        self
+    ):
+        buoi_hom_nay = (
+            self.tao_buoi_cho_lich_pt()
+        )
+
+        self.client.force_login(
+            self.pt_1.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_danh_sach,
+            {
+                "ngay": "khong-phai-ngay",
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            response.context[
+                "ngay_duoc_chon"
+            ],
+            self.hom_nay,
+        )
+
+        self.assertTrue(
+            response.context[
+                "ngay_khong_hop_le"
+            ]
+        )
+
+        self.assertContains(
+            response,
+            buoi_hom_nay.ma_buoi,
+        )
+
+        self.assertContains(
+            response,
+            "Ngày được nhập không hợp lệ.",
+        )
 
     def test_admin_xem_danh_sach_nhung_khong_co_nut_tao(
         self

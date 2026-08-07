@@ -12,23 +12,15 @@
   <section class="page-section">
     <div class="page-heading">
       <div>
-        <h2>Khu vực Huấn luyện viên</h2>
+        <h2>
+          Xin chào {{ huan_luyen_vien.ho_ten }}
+        </h2>
 
         <p>
-          Theo dõi các buổi tập PT được phân công
-          và ghi nhận kết quả sau khi tập.
+          Theo dõi lịch tập PT được phân công
+          trong ngày hôm nay.
         </p>
       </div>
-    </div>
-
-    <div class="detail-card">
-      <h3>Lịch tập của tôi</h3>
-
-      <p>
-        Xem danh sách các buổi tập được phân công,
-        thông tin Hội viên, thời gian tập và trạng thái
-        của từng buổi.
-      </p>
 
       <a
         class="primary-button"
@@ -36,6 +28,87 @@
       >
         Xem lịch tập của tôi
       </a>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>
+          Lịch tập ngày
+          {{ hom_nay|date:"d/m/Y" }}
+        </h3>
+      </div>
+
+      <div class="form-actions">
+        {% for gia_tri, nhan in cac_bo_loc_trang_thai %}
+          <a
+            class="{% if trang_thai_duoc_chon == gia_tri %}primary-button{% else %}secondary-button{% endif %}"
+            href="{% url 'gym:trang_pt' %}{% if gia_tri %}?trang_thai={{ gia_tri }}{% endif %}"
+          >
+            {{ nhan }}
+          </a>
+        {% endfor %}
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã buổi</th>
+              <th>Hội viên</th>
+              <th>Thời gian</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for buoi_tap in cac_buoi_tap_hom_nay %}
+              <tr>
+                <td>
+                  <strong>
+                    {{ buoi_tap.ma_buoi }}
+                  </strong>
+                </td>
+
+                <td>
+                  {{ buoi_tap.dang_ky.hoi_vien.ma_hv }}
+                  —
+                  {{ buoi_tap.dang_ky.hoi_vien.ho_ten }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.gio_bat_dau|time:"H:i" }}
+                  –
+                  {{ buoi_tap.gio_ket_thuc|time:"H:i" }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.get_trang_thai_display }}
+                </td>
+
+                <td>
+                  <a
+                    class="table-action-link"
+                    href="{% url 'gym:chi_tiet_buoi_tap_pt' buoi_tap.ma_buoi %}"
+                  >
+                    Xem chi tiết
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td
+                  colspan="5"
+                  class="empty-state"
+                >
+                  Không có buổi tập PT phù hợp
+                  trong ngày hôm nay.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 {% endblock %}

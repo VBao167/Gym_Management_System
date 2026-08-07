@@ -10,17 +10,22 @@
 
 {% block content %}
   <section class="page-section">
+
     <div class="page-heading">
       <div>
         {% if la_lich_ca_nhan %}
           <h2>Lịch tập của tôi</h2>
+
           <p>
-            Theo dõi các buổi tập PT được phân công.
+            Theo dõi các buổi tập PT được phân công
+            theo từng ngày.
           </p>
         {% else %}
           <h2>Danh sách buổi tập PT</h2>
+
           <p>
-            Theo dõi các buổi tập đã được xếp trong hệ thống.
+            Theo dõi các buổi tập đã được xếp
+            trong hệ thống.
           </p>
         {% endif %}
       </div>
@@ -35,14 +40,88 @@
       {% endif %}
     </div>
 
+    {% if la_lich_ca_nhan %}
+      <div class="detail-card">
+        <div class="detail-card-heading">
+          <h3>Chọn ngày xem lịch</h3>
+        </div>
+
+        <form
+          method="get"
+          class="schedule-filter-form"
+        >
+          <div class="form-group">
+            <label for="id_ngay">
+              Ngày tập
+            </label>
+
+            <input
+              id="id_ngay"
+              class="form-input"
+              type="date"
+              name="ngay"
+              value="{{ ngay_duoc_chon|date:'Y-m-d' }}"
+            />
+          </div>
+
+          {% if trang_thai_duoc_chon %}
+            <input
+              type="hidden"
+              name="trang_thai"
+              value="{{ trang_thai_duoc_chon }}"
+            />
+          {% endif %}
+
+          {% if ngay_khong_hop_le %}
+            <p class="error-message">
+              Ngày được nhập không hợp lệ.
+              Hệ thống đang hiển thị lịch hôm nay.
+            </p>
+          {% endif %}
+
+          <button
+            class="secondary-button"
+            type="submit"
+          >
+            Xem lịch
+          </button>
+        </form>
+
+        <div
+          class="detail-card-heading
+                 schedule-results-heading"
+        >
+          <h3>
+            Các buổi tập PT ngày
+            {{ ngay_duoc_chon|date:"d/m/Y" }}
+          </h3>
+        </div>
+
+        <div class="form-actions">
+          {% for gia_tri, nhan in cac_bo_loc_trang_thai %}
+            <a
+              class="{% if trang_thai_duoc_chon == gia_tri %}primary-button{% else %}secondary-button{% endif %}"
+              href="?ngay={{ ngay_duoc_chon|date:'Y-m-d' }}{% if gia_tri %}&trang_thai={{ gia_tri }}{% endif %}"
+            >
+              {{ nhan }}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
     <div class="table-container">
       <table class="data-table">
         <thead>
           <tr>
             <th>Mã buổi</th>
             <th>Hội viên</th>
-            <th>Huấn luyện viên</th>
-            <th>Ngày tập</th>
+
+            {% if not la_lich_ca_nhan %}
+              <th>Huấn luyện viên</th>
+              <th>Ngày tập</th>
+            {% endif %}
+
             <th>Thời gian</th>
             <th>Trạng thái</th>
             <th>Thao tác</th>
@@ -53,26 +132,33 @@
           {% for buoi_tap in cac_buoi_tap %}
             <tr>
               <td>
-                <strong>{{ buoi_tap.ma_buoi }}</strong>
+                <strong>
+                  {{ buoi_tap.ma_buoi }}
+                </strong>
               </td>
 
               <td>
                 {{ buoi_tap.dang_ky.hoi_vien.ma_hv }}
-                — {{ buoi_tap.dang_ky.hoi_vien.ho_ten }}
+                —
+                {{ buoi_tap.dang_ky.hoi_vien.ho_ten }}
               </td>
 
-              <td>
-                {{ buoi_tap.huan_luyen_vien.ma_pt }}
-                — {{ buoi_tap.huan_luyen_vien.ho_ten }}
-              </td>
+              {% if not la_lich_ca_nhan %}
+                <td>
+                  {{ buoi_tap.huan_luyen_vien.ma_pt }}
+                  —
+                  {{ buoi_tap.huan_luyen_vien.ho_ten }}
+                </td>
 
-              <td>
-                {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
-              </td>
+                <td>
+                  {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
+                </td>
+              {% endif %}
 
               <td>
                 {{ buoi_tap.gio_bat_dau|time:"H:i" }}
-                – {{ buoi_tap.gio_ket_thuc|time:"H:i" }}
+                –
+                {{ buoi_tap.gio_ket_thuc|time:"H:i" }}
               </td>
 
               <td>
@@ -87,9 +173,13 @@
                 </a>
               </td>
             </tr>
+
           {% empty %}
             <tr>
-              <td colspan="7" class="empty-state">
+              <td
+                colspan="{% if la_lich_ca_nhan %}5{% else %}7{% endif %}"
+                class="empty-state"
+              >
                 Chưa có buổi tập PT phù hợp.
               </td>
             </tr>
@@ -97,5 +187,6 @@
         </tbody>
       </table>
     </div>
+
   </section>
 {% endblock %}

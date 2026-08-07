@@ -1065,36 +1065,156 @@ def danh_sach_buoi_tap_pt(request):
             "huan_luyen_vien",
             "le_tan",
         )
-        .order_by(
-            "-ngay_tap",
-            "-gio_bat_dau",
-            "ma_buoi",
-        )
     )
 
     la_lich_ca_nhan = False
+    ngay_duoc_chon = None
+    ngay_khong_hop_le = False
+    trang_thai_duoc_chon = ""
+    cac_bo_loc_trang_thai = []
 
     if request.user.vai_tro == TaiKhoan.VaiTro.LE_TAN:
         _lay_le_tan_dang_nhap(request)
 
+        cac_buoi_tap = cac_buoi_tap.order_by(
+            "-ngay_tap",
+            "-gio_bat_dau",
+            "ma_buoi",
+        )
+
     elif request.user.vai_tro == TaiKhoan.VaiTro.PT:
         huan_luyen_vien = (
-            _lay_huan_luyen_vien_dang_nhap(request)
+            _lay_huan_luyen_vien_dang_nhap(
+                request
+            )
+        )
+
+        (
+            ngay_duoc_chon,
+            ngay_khong_hop_le,
+        ) = _lay_ngay_xem_lich_pt(request)
+
+        (
+            trang_thai_duoc_chon,
+            cac_bo_loc_trang_thai,
+        ) = _lay_bo_loc_trang_thai_buoi_pt(
+            request
         )
 
         cac_buoi_tap = cac_buoi_tap.filter(
             huan_luyen_vien=huan_luyen_vien,
+            ngay_tap=ngay_duoc_chon,
         )
+
+        if trang_thai_duoc_chon:
+            cac_buoi_tap = cac_buoi_tap.filter(
+                trang_thai=trang_thai_duoc_chon,
+            )
+
+        cac_buoi_tap = cac_buoi_tap.order_by(
+            "gio_bat_dau",
+            "ma_buoi",
+        )
+
         la_lich_ca_nhan = True
+
+    else:
+        cac_buoi_tap = cac_buoi_tap.order_by(
+            "-ngay_tap",
+            "-gio_bat_dau",
+            "ma_buoi",
+        )
 
     return render(
         request,
-        "gym/buoi_tap_pt/"
-        "danh_sach_buoi_tap_pt.html",
+        (
+            "gym/buoi_tap_pt/"
+            "danh_sach_buoi_tap_pt.html"
+        ),
         {
             "cac_buoi_tap": cac_buoi_tap,
             "la_lich_ca_nhan": la_lich_ca_nhan,
+            "ngay_duoc_chon": ngay_duoc_chon,
+            "ngay_khong_hop_le": (
+                ngay_khong_hop_le
+            ),
+            "trang_thai_duoc_chon": (
+                trang_thai_duoc_chon
+            ),
+            "cac_bo_loc_trang_thai": (
+                cac_bo_loc_trang_thai
+            ),
         },
+    )
+
+
+def _lay_ngay_xem_lich_pt(request):
+    hom_nay = timezone.localdate()
+
+    gia_tri_ngay = request.GET.get(
+        "ngay",
+        "",
+    ).strip()
+
+    if not gia_tri_ngay:
+        return hom_nay, False
+
+    try:
+        ngay_duoc_chon = date.fromisoformat(
+            gia_tri_ngay
+        )
+    except ValueError:
+        return hom_nay, True
+
+    return ngay_duoc_chon, False
+
+
+def _lay_bo_loc_trang_thai_buoi_pt(request):
+    trang_thai_duoc_chon = request.GET.get(
+        "trang_thai",
+        "",
+    ).strip()
+
+    cac_trang_thai_hop_le = {
+        BuoiTapPT.TrangThai.DA_LEN_LICH,
+        BuoiTapPT.TrangThai.HOAN_THANH,
+        BuoiTapPT.TrangThai.VANG,
+        BuoiTapPT.TrangThai.HUY,
+    }
+
+    if (
+        trang_thai_duoc_chon
+        and trang_thai_duoc_chon
+        not in cac_trang_thai_hop_le
+    ):
+        trang_thai_duoc_chon = ""
+
+    cac_bo_loc_trang_thai = [
+        (
+            "",
+            "Tất cả",
+        ),
+        (
+            BuoiTapPT.TrangThai.DA_LEN_LICH,
+            "Đã lên lịch",
+        ),
+        (
+            BuoiTapPT.TrangThai.HOAN_THANH,
+            "Hoàn thành",
+        ),
+        (
+            BuoiTapPT.TrangThai.VANG,
+            "Vắng",
+        ),
+        (
+            BuoiTapPT.TrangThai.HUY,
+            "Hủy",
+        ),
+    ]
+
+    return (
+        trang_thai_duoc_chon,
+        cac_bo_loc_trang_thai,
     )
 
 
@@ -1557,9 +1677,65 @@ def trang_le_tan(request):
 def trang_pt(request):
     cap_nhat_trang_thai_toan_bo()
 
+    huan_luyen_vien = (
+        _lay_huan_luyen_vien_dang_nhap(
+            request
+        )
+    )
+
+    hom_nay = timezone.localdate()
+
+    (
+        trang_thai_duoc_chon,
+        cac_bo_loc_trang_thai,
+    ) = _lay_bo_loc_trang_thai_buoi_pt(
+        request
+    )
+
+    cac_buoi_tap_hom_nay = (
+        BuoiTapPT.objects
+        .filter(
+            huan_luyen_vien=huan_luyen_vien,
+            ngay_tap=hom_nay,
+        )
+        .select_related(
+            "dang_ky",
+            "dang_ky__hoi_vien",
+        )
+    )
+
+    if trang_thai_duoc_chon:
+        cac_buoi_tap_hom_nay = (
+            cac_buoi_tap_hom_nay.filter(
+                trang_thai=trang_thai_duoc_chon,
+            )
+        )
+
+    cac_buoi_tap_hom_nay = (
+        cac_buoi_tap_hom_nay.order_by(
+            "gio_bat_dau",
+            "ma_buoi",
+        )
+    )
+
     return render(
         request,
         "gym/trang_chu/pt.html",
+        {
+            "huan_luyen_vien": (
+                huan_luyen_vien
+            ),
+            "hom_nay": hom_nay,
+            "cac_buoi_tap_hom_nay": (
+                cac_buoi_tap_hom_nay
+            ),
+            "trang_thai_duoc_chon": (
+                trang_thai_duoc_chon
+            ),
+            "cac_bo_loc_trang_thai": (
+                cac_bo_loc_trang_thai
+            ),
+        },
     )
 
 @vai_tro_required(TaiKhoan.VaiTro.HOI_VIEN)
