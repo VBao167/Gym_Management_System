@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.db.models import Q
 
 from gym.models import (
     BuoiTapPT,
@@ -396,12 +397,7 @@ class DiemDanhForm(forms.Form):
     hoi_vien = forms.ModelChoiceField(
         queryset=HoiVien.objects.none(),
         label="Hội viên",
-        empty_label="Chọn hội viên",
-        widget=forms.Select(
-            attrs={
-                "class": "form-select",
-            }
-        ),
+        widget=forms.HiddenInput(),
     )
 
     ghi_chu = forms.CharField(
@@ -419,13 +415,67 @@ class DiemDanhForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args,
+        tu_khoa="",
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
 
+        tu_khoa = (tu_khoa or "").strip()
+
+        hoi_vien_hop_le = HoiVien.objects.filter(
+            trang_thai=True,
+        )
+
+        if tu_khoa:
+            ket_qua = hoi_vien_hop_le.filter(
+                Q(ma_hv__icontains=tu_khoa)
+                | Q(ho_ten__icontains=tu_khoa)
+                | Q(sdt__icontains=tu_khoa)
+                | Q(email__icontains=tu_khoa)
+            )
+            gioi_han = 20
+        else:
+            ket_qua = hoi_vien_hop_le
+            gioi_han = 10
+
+        cac_ma_hoi_vien = list(
+            ket_qua
+            .order_by("ma_hv")
+            .values_list(
+                "ma_hv",
+                flat=True,
+            )[:gioi_han]
+        )
+
+        if self.is_bound:
+            ten_truong = self.add_prefix(
+                "hoi_vien"
+            )
+            ma_hoi_vien_da_chon = (
+                self.data.get(ten_truong)
+            )
+
+            if (
+                ma_hoi_vien_da_chon
+                and ma_hoi_vien_da_chon
+                not in cac_ma_hoi_vien
+                and hoi_vien_hop_le.filter(
+                    pk=ma_hoi_vien_da_chon,
+                ).exists()
+            ):
+                cac_ma_hoi_vien.append(
+                    ma_hoi_vien_da_chon
+                )
+
         self.fields["hoi_vien"].queryset = (
-            HoiVien.objects.filter(
-                trang_thai=True,
-            ).order_by("ma_hv")
+            hoi_vien_hop_le
+            .filter(
+                ma_hv__in=cac_ma_hoi_vien,
+            )
+            .order_by("ma_hv")
         )
 
 class DangKyPTChoiceField(forms.ModelChoiceField):
@@ -441,15 +491,10 @@ class DangKyPTChoiceField(forms.ModelChoiceField):
 
 
 class BuoiTapPTForm(forms.Form):
-    dang_ky = DangKyPTChoiceField(
-        queryset=DangKyGoiTap.objects.none(),
-        label="Đăng ký gói PT",
-        empty_label="Chọn đăng ký gói PT",
-        widget=forms.Select(
-            attrs={
-                "class": "form-select",
-            }
-        ),
+    hoi_vien = forms.ModelChoiceField(
+        queryset=HoiVien.objects.none(),
+        label="Hội viên",
+        widget=forms.HiddenInput(),
     )
 
     huan_luyen_vien = forms.ModelChoiceField(
@@ -514,19 +559,13 @@ class BuoiTapPTForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields["dang_ky"].queryset = (
-            DangKyGoiTap.objects
+        self.fields["hoi_vien"].queryset = (
+            HoiVien.objects
             .filter(
-                so_buoi_pt_dang_ky__gt=0,
+                cac_dang_ky_goi__so_buoi_pt_dang_ky__gt=0,
             )
-            .select_related(
-                "hoi_vien",
-                "goi_tap",
-            )
-            .order_by(
-                "-ngay_dang_ky",
-                "ma_dk",
-            )
+            .distinct()
+            .order_by("ma_hv")
         )
 
         self.fields["huan_luyen_vien"].queryset = (

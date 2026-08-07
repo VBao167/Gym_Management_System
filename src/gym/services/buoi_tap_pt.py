@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from gym.models import BuoiTapPT
+from gym.models import BuoiTapPT, DangKyGoiTap
 
 
 def _tao_buoi_tap_pt(buoi_tap):
@@ -77,6 +77,100 @@ def tao_buoi_tap_pt(
     )
 
     return _tao_buoi_tap_pt(buoi_tap)
+
+
+def _chon_dang_ky_pt_uu_tien(
+    *,
+    hoi_vien,
+    ngay_tap,
+):
+    if not hoi_vien or not hoi_vien.pk:
+        raise ValidationError(
+            {
+                "hoi_vien": (
+                    "Phải chọn Hội viên cần xếp buổi PT."
+                )
+            }
+        )
+
+    co_quyen_vao_phong_tap = (
+        DangKyGoiTap.objects
+        .filter(
+            hoi_vien=hoi_vien,
+            ngay_bat_dau__lte=ngay_tap,
+            ngay_ket_thuc__gte=ngay_tap,
+        )
+        .exists()
+    )
+
+    if not co_quyen_vao_phong_tap:
+        raise ValidationError(
+            {
+                "ngay_tap": (
+                    "Tại ngày tập, Hội viên không có "
+                    "gói tập còn hiệu lực để vào phòng gym."
+                )
+            }
+        )
+
+    cac_dang_ky_pt = (
+        DangKyGoiTap.objects
+        .select_for_update()
+        .filter(
+            hoi_vien=hoi_vien,
+            so_buoi_pt_dang_ky__gt=0,
+            ngay_dang_ky__lte=ngay_tap,
+            ngay_ket_thuc__gte=ngay_tap,
+        )
+        .select_related(
+            "hoi_vien",
+            "goi_tap",
+        )
+        .order_by(
+            "ngay_dang_ky",
+            "ma_dk",
+        )
+    )
+
+    for dang_ky in cac_dang_ky_pt:
+        if dang_ky.so_buoi_pt_co_the_xep_lich > 0:
+            return dang_ky
+
+    raise ValidationError(
+        {
+            "hoi_vien": (
+                "Hội viên không còn đăng ký PT "
+                "có thể sử dụng tại ngày tập đã chọn."
+            )
+        }
+    )
+
+
+@transaction.atomic
+def tao_buoi_tap_pt_cho_hoi_vien(
+    *,
+    hoi_vien,
+    huan_luyen_vien,
+    le_tan,
+    ngay_tap,
+    gio_bat_dau,
+    gio_ket_thuc,
+    ghi_chu="",
+):
+    dang_ky = _chon_dang_ky_pt_uu_tien(
+        hoi_vien=hoi_vien,
+        ngay_tap=ngay_tap,
+    )
+
+    return tao_buoi_tap_pt(
+        dang_ky=dang_ky,
+        huan_luyen_vien=huan_luyen_vien,
+        le_tan=le_tan,
+        ngay_tap=ngay_tap,
+        gio_bat_dau=gio_bat_dau,
+        gio_ket_thuc=gio_ket_thuc,
+        ghi_chu=ghi_chu,
+    )
 
 
 @transaction.atomic

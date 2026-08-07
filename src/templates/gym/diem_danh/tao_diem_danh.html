@@ -15,8 +15,8 @@
         <h2>Ghi nhận lượt điểm danh</h2>
 
         <p>
-          Chọn Hội viên đang có quyền sử dụng
-          phòng gym để ghi nhận thời gian vào tập.
+          Tìm Hội viên đang có quyền sử dụng phòng gym
+          và ghi nhận thời gian vào tập.
         </p>
 
         <p>
@@ -26,36 +26,179 @@
       </div>
     </div>
 
-    <form method="post" novalidate>
-      {% csrf_token %}
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Điểm danh</h3>
+      </div>
 
-      {% if form.non_field_errors %}
-        <div class="error-message">
-          {{ form.non_field_errors }}
-        </div>
-      {% endif %}
-
-      {% for field in form %}
+      <form
+        method="get"
+        class="member-search-form"
+      >
         <div class="form-group">
-          <label for="{{ field.id_for_label }}">
-            {{ field.label }}
+          <label for="id_tu_khoa">
+            Tìm Hội viên
           </label>
 
-          {{ field }}
+          <input
+            id="id_tu_khoa"
+            class="form-input"
+            type="search"
+            name="tu_khoa"
+            value="{{ tu_khoa }}"
+            placeholder="Nhập mã, họ tên, số điện thoại hoặc email"
+            autocomplete="off"
+          />
+        </div>
 
-          {% for error in field.errors %}
+        <div class="form-actions">
+          <button
+            class="primary-button"
+            type="submit"
+          >
+            Tìm kiếm
+          </button>
+
+          {% if tu_khoa %}
+            <a
+              class="secondary-button"
+              href="{% url 'gym:tao_diem_danh_moi' %}"
+            >
+              Xóa tìm kiếm
+            </a>
+          {% endif %}
+        </div>
+      </form>
+
+      {% if tu_khoa %}
+        <p class="form-help">
+          Kết quả phù hợp với từ khóa
+          “{{ tu_khoa }}”.
+        </p>
+      {% else %}
+        <p class="form-help">
+          Đang hiển thị tối đa 10 Hội viên đủ điều kiện
+          theo thứ tự mã Hội viên.
+        </p>
+      {% endif %}
+
+      <form
+        method="post"
+        novalidate
+        class="attendance-form"
+      >
+        {% csrf_token %}
+
+        <input
+          type="hidden"
+          name="tu_khoa"
+          value="{{ tu_khoa }}"
+        />
+
+        {% if form.non_field_errors %}
+          <div class="error-message">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        {% for error in form.hoi_vien.errors %}
+          <p class="error-message">
+            {{ error }}
+          </p>
+        {% endfor %}
+
+        <div class="form-group">
+          <label for="{{ form.ghi_chu.id_for_label }}">
+            {{ form.ghi_chu.label }}
+          </label>
+
+          {{ form.ghi_chu }}
+
+          {% for error in form.ghi_chu.errors %}
             <p class="error-message">
               {{ error }}
             </p>
           {% endfor %}
         </div>
-      {% endfor %}
+
+        <div class="attendance-results">
+          <div class="detail-card-heading">
+            <h3>
+              {% if tu_khoa %}
+                Hội viên tìm thấy
+              {% else %}
+                Hội viên có thể điểm danh
+              {% endif %}
+            </h3>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mã Hội viên</th>
+                  <th>Họ và tên</th>
+                  <th>Số điện thoại</th>
+                  <th>Email</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for hoi_vien in cac_hoi_vien_hop_le %}
+                  <tr>
+                    <td>
+                      <strong>
+                        {{ hoi_vien.ma_hv }}
+                      </strong>
+                    </td>
+
+                    <td>
+                      {{ hoi_vien.ho_ten }}
+                    </td>
+
+                    <td>
+                      {{ hoi_vien.sdt }}
+                    </td>
+
+                    <td>
+                      {{ hoi_vien.email }}
+                    </td>
+
+                    <td>
+                      <button
+                        class="primary-button attendance-row-button"
+                        type="submit"
+                        name="hoi_vien"
+                        value="{{ hoi_vien.ma_hv }}"
+                      >
+                        Điểm danh
+                      </button>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td
+                      colspan="5"
+                      class="empty-state"
+                    >
+                      {% if tu_khoa %}
+                        Không tìm thấy Hội viên đang có
+                        quyền tập phù hợp với từ khóa.
+                      {% else %}
+                        Hiện không có Hội viên đủ điều kiện
+                        để điểm danh.
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </form>
 
       <div class="form-actions">
-        <button class="primary-button" type="submit">
-          Xác nhận điểm danh
-        </button>
-
         <a
           class="secondary-button"
           href="{% url 'gym:danh_sach_diem_danh' %}"
@@ -63,6 +206,6 @@
           Quay lại danh sách
         </a>
       </div>
-    </form>
+    </div>
   </section>
 {% endblock %}

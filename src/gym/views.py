@@ -1,4 +1,7 @@
+from datetime import date
+
 from django.db import transaction
+from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -46,6 +49,7 @@ from gym.services.buoi_tap_pt import (
     cap_nhat_ket_qua_buoi_tap_pt,
     huy_buoi_tap_pt,
     tao_buoi_tap_pt,
+    tao_buoi_tap_pt_cho_hoi_vien,
 )
 
 CAU_HINH_NHAN_VIEN = {
@@ -698,6 +702,23 @@ def _lay_hoi_vien_dang_nhap(request):
 def danh_sach_dang_ky_hoa_don(request):
     cap_nhat_trang_thai_toan_bo()
 
+    trang_thai_duoc_chon = request.GET.get(
+        "trang_thai",
+        "",
+    ).strip()
+
+    cac_trang_thai_hop_le = {
+        DangKyGoiTap.TrangThai.HOAT_DONG,
+        DangKyGoiTap.TrangThai.CHUA_KICH_HOAT,
+        DangKyGoiTap.TrangThai.HET_HAN,
+    }
+
+    if (
+        trang_thai_duoc_chon
+        not in cac_trang_thai_hop_le
+    ):
+        trang_thai_duoc_chon = ""
+
     cac_dang_ky = (
         DangKyGoiTap.objects
         .select_related(
@@ -706,18 +727,50 @@ def danh_sach_dang_ky_hoa_don(request):
             "hoa_don",
             "hoa_don__le_tan",
         )
-        .order_by(
-            "-ngay_dang_ky",
-            "ma_dk",
-        )
     )
+
+    if trang_thai_duoc_chon:
+        cac_dang_ky = cac_dang_ky.filter(
+            trang_thai=trang_thai_duoc_chon,
+        )
+
+    cac_dang_ky = cac_dang_ky.order_by(
+        "ma_dk",
+    )
+
+    cac_bo_loc_trang_thai = [
+        (
+            "",
+            "Tất cả",
+        ),
+        (
+            DangKyGoiTap.TrangThai.HOAT_DONG,
+            "Hoạt động",
+        ),
+        (
+            DangKyGoiTap.TrangThai.CHUA_KICH_HOAT,
+            "Chưa kích hoạt",
+        ),
+        (
+            DangKyGoiTap.TrangThai.HET_HAN,
+            "Hết hạn",
+        ),
+    ]
 
     return render(
         request,
-        "gym/dang_ky_hoa_don/"
-        "danh_sach_dang_ky_hoa_don.html",
+        (
+            "gym/dang_ky_hoa_don/"
+            "danh_sach_dang_ky_hoa_don.html"
+        ),
         {
             "cac_dang_ky": cac_dang_ky,
+            "trang_thai_duoc_chon": (
+                trang_thai_duoc_chon
+            ),
+            "cac_bo_loc_trang_thai": (
+                cac_bo_loc_trang_thai
+            ),
         },
     )
 
@@ -927,8 +980,24 @@ def tao_diem_danh_moi(request):
 
     cap_nhat_trang_thai_toan_bo()
 
+    if request.method == "POST":
+        tu_khoa = request.POST.get(
+            "tu_khoa",
+            "",
+        ).strip()
+    else:
+        tu_khoa = request.GET.get(
+            "tu_khoa",
+            "",
+        ).strip()
+
     form = DiemDanhForm(
-        request.POST or None
+        request.POST or None,
+        tu_khoa=tu_khoa,
+    )
+
+    cac_hoi_vien_hop_le = (
+        form.fields["hoi_vien"].queryset
     )
 
     if request.method == "POST" and form.is_valid():
@@ -971,6 +1040,10 @@ def tao_diem_danh_moi(request):
         {
             "form": form,
             "le_tan": le_tan,
+            "tu_khoa": tu_khoa,
+            "cac_hoi_vien_hop_le": (
+                cac_hoi_vien_hop_le
+            ),
         },
     )
 
@@ -1025,21 +1098,120 @@ def danh_sach_buoi_tap_pt(request):
     )
 
 
+def _lay_hoi_vien_co_the_xep_buoi_pt(tu_khoa=""):
+    cac_dang_ky_pt = (
+        DangKyGoiTap.objects
+        .filter(
+            so_buoi_pt_dang_ky__gt=0,
+        )
+        .select_related(
+            "hoi_vien",
+        )
+        .prefetch_related(
+            "cac_buoi_tap_pt",
+        )
+        .order_by(
+            "hoi_vien__ma_hv",
+            "ngay_dang_ky",
+            "ma_dk",
+        )
+    )
+
+    if tu_khoa:
+        cac_dang_ky_pt = cac_dang_ky_pt.filter(
+            Q(
+                hoi_vien__ma_hv__icontains=tu_khoa
+            )
+            | Q(
+                hoi_vien__ho_ten__icontains=tu_khoa
+            )
+            | Q(
+                hoi_vien__sdt__icontains=tu_khoa
+            )
+            | Q(
+                hoi_vien__email__icontains=tu_khoa
+            )
+        )
+
+    gioi_han = 20 if tu_khoa else 10
+
+    ket_qua = []
+    theo_ma_hoi_vien = {}
+
+    for dang_ky in cac_dang_ky_pt:
+        so_buoi_co_the_xep = (
+            dang_ky.so_buoi_pt_co_the_xep_lich
+        )
+
+        if so_buoi_co_the_xep <= 0:
+            continue
+
+        ma_hoi_vien = dang_ky.hoi_vien_id
+
+        if ma_hoi_vien not in theo_ma_hoi_vien:
+            if len(ket_qua) >= gioi_han:
+                break
+
+            thong_tin = {
+                "hoi_vien": dang_ky.hoi_vien,
+                "so_buoi_pt_co_the_xep": 0,
+            }
+
+            theo_ma_hoi_vien[ma_hoi_vien] = thong_tin
+            ket_qua.append(thong_tin)
+
+        theo_ma_hoi_vien[ma_hoi_vien][
+            "so_buoi_pt_co_the_xep"
+        ] += so_buoi_co_the_xep
+
+    return ket_qua
+
+
 @vai_tro_required(TaiKhoan.VaiTro.LE_TAN)
 def tao_buoi_tap_pt_moi(request):
     le_tan = _lay_le_tan_dang_nhap(request)
 
     cap_nhat_trang_thai_toan_bo()
 
+    if request.method == "POST":
+        tu_khoa = (
+            request.POST.get("tu_khoa", "")
+            .strip()
+        )
+        ma_hoi_vien_da_chon = request.POST.get(
+            "hoi_vien",
+            "",
+        )
+    else:
+        tu_khoa = (
+            request.GET.get("tu_khoa", "")
+            .strip()
+        )
+        ma_hoi_vien_da_chon = request.GET.get(
+            "hoi_vien",
+            "",
+        )
+
+    hoi_vien_da_chon = (
+        HoiVien.objects
+        .filter(pk=ma_hoi_vien_da_chon)
+        .first()
+        if ma_hoi_vien_da_chon
+        else None
+    )
+
     form = BuoiTapPTForm(
-        request.POST or None
+        request.POST or None,
+        initial={
+            "hoi_vien": hoi_vien_da_chon,
+        },
     )
 
     if request.method == "POST" and form.is_valid():
         try:
-            tao_buoi_tap_pt(
-                dang_ky=(
-                    form.cleaned_data["dang_ky"]
+            tao_buoi_tap_pt_cho_hoi_vien(
+                hoi_vien=(
+                    form.cleaned_data["hoi_vien"]
                 ),
                 huan_luyen_vien=(
                     form.cleaned_data[
@@ -1087,12 +1259,39 @@ def tao_buoi_tap_pt_moi(request):
                 "gym:danh_sach_buoi_tap_pt"
             )
 
+    cac_hoi_vien = (
+        _lay_hoi_vien_co_the_xep_buoi_pt(
+            tu_khoa
+        )
+    )
+
+    so_buoi_pt_cua_hoi_vien_da_chon = 0
+
+    if hoi_vien_da_chon:
+        for thong_tin in cac_hoi_vien:
+            if (
+                thong_tin["hoi_vien"].pk
+                == hoi_vien_da_chon.pk
+            ):
+                so_buoi_pt_cua_hoi_vien_da_chon = (
+                    thong_tin[
+                        "so_buoi_pt_co_the_xep"
+                    ]
+                )
+                break
+
     return render(
         request,
         "gym/buoi_tap_pt/tao_buoi_tap_pt.html",
         {
             "form": form,
             "le_tan": le_tan,
+            "tu_khoa": tu_khoa,
+            "cac_hoi_vien": cac_hoi_vien,
+            "hoi_vien_da_chon": hoi_vien_da_chon,
+            "so_buoi_pt_cua_hoi_vien_da_chon": (
+                so_buoi_pt_cua_hoi_vien_da_chon
+            ),
         },
     )
 
@@ -1282,9 +1481,75 @@ def chi_tiet_buoi_tap_pt(request, ma_buoi):
 def trang_le_tan(request):
     cap_nhat_trang_thai_toan_bo()
 
+    le_tan = _lay_le_tan_dang_nhap(request)
+    hom_nay = timezone.localdate()
+
+    ngay_duoc_chon = hom_nay
+    ngay_khong_hop_le = False
+
+    gia_tri_ngay = request.GET.get("ngay", "").strip()
+
+    if gia_tri_ngay:
+        try:
+            ngay_duoc_chon = date.fromisoformat(
+                gia_tri_ngay
+            )
+        except ValueError:
+            ngay_khong_hop_le = True
+
+    cac_buoi_tap_trong_ngay = (
+        BuoiTapPT.objects
+        .filter(
+            ngay_tap=ngay_duoc_chon,
+        )
+        .select_related(
+            "dang_ky",
+            "dang_ky__hoi_vien",
+            "dang_ky__goi_tap",
+            "huan_luyen_vien",
+            "le_tan",
+        )
+        .order_by(
+            "gio_bat_dau",
+            "gio_ket_thuc",
+            "ma_buoi",
+        )
+    )
+
+    cac_lan_diem_danh_trong_ngay = (
+        DiemDanh.objects
+        .filter(
+            thoi_gian_diem_danh__date=(
+                ngay_duoc_chon
+            ),
+        )
+        .select_related(
+            "hoi_vien",
+            "le_tan",
+        )
+        .order_by(
+            "-thoi_gian_diem_danh",
+            "-ma_dd",
+        )
+    )
+
     return render(
         request,
         "gym/trang_chu/le_tan.html",
+        {
+            "le_tan": le_tan,
+            "hom_nay": hom_nay,
+            "ngay_duoc_chon": ngay_duoc_chon,
+            "ngay_khong_hop_le": (
+                ngay_khong_hop_le
+            ),
+            "cac_buoi_tap_trong_ngay": (
+                cac_buoi_tap_trong_ngay
+            ),
+            "cac_lan_diem_danh_gan_nhat": (
+                cac_lan_diem_danh_trong_ngay[:5]
+            ),
+        },
     )
 
 

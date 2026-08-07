@@ -112,6 +112,75 @@ class QuanLyDiemDanhTests(TestCase):
             "gym:tao_diem_danh_moi"
         )
 
+    def tao_hoi_vien_hoat_dong_bo_sung(
+        self,
+        thu_tu,
+    ):
+        hoi_vien = tao_hoi_vien(
+            ho_ten=(
+                f"Hội viên tìm kiếm {thu_tu}"
+            ),
+            gioi_tinh="Nam",
+            ngay_sinh=date(2001, 4, 4),
+            sdt=f"09720000{thu_tu:02d}",
+            email=(
+                f"hoi.vien.tim.kiem.{thu_tu}"
+                "@example.com"
+            ),
+            dia_chi="TP.HCM",
+        )
+
+        tao_dang_ky_va_hoa_don(
+            hoi_vien=hoi_vien,
+            goi_tap=self.goi_tap,
+            le_tan=self.le_tan,
+            ngay_dang_ky=self.hom_nay,
+            ngay_bat_dau=self.hom_nay,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.TIEN_MAT
+            ),
+        )
+
+        return hoi_vien
+
+    def test_mac_dinh_chi_hien_thi_toi_da_muoi_hoi_vien(
+        self
+    ):
+        for thu_tu in range(1, 11):
+            self.tao_hoi_vien_hoat_dong_bo_sung(
+                thu_tu
+            )
+
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_tao
+        )
+
+        cac_hoi_vien = list(
+            response.context[
+                "cac_hoi_vien_hop_le"
+            ]
+        )
+
+        self.assertEqual(
+            len(cac_hoi_vien),
+            10,
+        )
+
+        self.assertEqual(
+            [
+                hoi_vien.ma_hv
+                for hoi_vien in cac_hoi_vien
+            ],
+            sorted(
+                hoi_vien.ma_hv
+                for hoi_vien in cac_hoi_vien
+            ),
+        )
+
     def test_admin_xem_danh_sach_nhung_khong_co_nut_tao(
         self
     ):
@@ -195,7 +264,7 @@ class QuanLyDiemDanhTests(TestCase):
                     403,
                 )
 
-    def test_form_chi_hien_thi_hoi_vien_dang_hoat_dong(
+    def test_form_chi_hien_thi_hoi_vien_du_dieu_kien(
         self
     ):
         self.client.force_login(
@@ -211,18 +280,23 @@ class QuanLyDiemDanhTests(TestCase):
             response,
             "gym/diem_danh/tao_diem_danh.html",
         )
+
+        form = response.context["form"]
+
         self.assertEqual(
-            list(response.context["form"].fields),
+            list(form.fields),
             [
                 "hoi_vien",
                 "ghi_chu",
             ],
         )
 
+        self.assertTrue(
+            form.fields["hoi_vien"].widget.is_hidden
+        )
+
         queryset = (
-            response.context["form"]
-            .fields["hoi_vien"]
-            .queryset
+            form.fields["hoi_vien"].queryset
         )
 
         self.assertIn(
@@ -232,6 +306,154 @@ class QuanLyDiemDanhTests(TestCase):
         self.assertNotIn(
             self.hoi_vien_khong_co_goi,
             queryset,
+        )
+
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_hoi_vien_hop_le"
+                ]
+            ),
+            [
+                self.hoi_vien_hoat_dong,
+            ],
+        )
+
+        self.assertNotContains(
+            response,
+            '<select name="hoi_vien"',
+        )
+
+        self.assertContains(
+            response,
+            self.hoi_vien_hoat_dong.ma_hv,
+        )
+        self.assertContains(
+            response,
+            self.hoi_vien_hoat_dong.ho_ten,
+        )
+        self.assertContains(
+            response,
+            self.hoi_vien_hoat_dong.sdt,
+        )
+        self.assertContains(
+            response,
+            self.hoi_vien_hoat_dong.email,
+        )
+
+    def test_tim_hoi_vien_diem_danh_theo_nhieu_thong_tin(
+        self
+    ):
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        cac_tu_khoa = (
+            self.hoi_vien_hoat_dong.ma_hv,
+            "đang hoạt động",
+            "0971000002",
+            "hoi.vien.hoat.dong@example.com",
+        )
+
+        for tu_khoa in cac_tu_khoa:
+            with self.subTest(
+                tu_khoa=tu_khoa
+            ):
+                response = self.client.get(
+                    self.url_tao,
+                    {
+                        "tu_khoa": tu_khoa,
+                    },
+                )
+
+                self.assertEqual(
+                    response.status_code,
+                    200,
+                )
+
+                self.assertEqual(
+                    list(
+                        response.context[
+                            "cac_hoi_vien_hop_le"
+                        ]
+                    ),
+                    [
+                        self.hoi_vien_hoat_dong,
+                    ],
+                )
+
+                self.assertContains(
+                    response,
+                    self.hoi_vien_hoat_dong.ma_hv,
+                )
+
+    def test_tim_hoi_vien_khong_co_ket_qua(
+        self
+    ):
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_tao,
+            {
+                "tu_khoa": (
+                    "HoiVienKhongTonTai999"
+                ),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_hoi_vien_hop_le"
+                ]
+            ),
+            [],
+        )
+
+        self.assertContains(
+            response,
+            "Không tìm thấy Hội viên đang có",
+        )
+
+        self.assertContains(
+            response,
+            "quyền tập phù hợp với từ khóa.",
+        )
+
+    def test_tim_kiem_khong_hien_hoi_vien_khong_co_quyen_tap(
+        self
+    ):
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_tao,
+            {
+                "tu_khoa": (
+                    self.hoi_vien_khong_co_goi.ma_hv
+                ),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_hoi_vien_hop_le"
+                ]
+            ),
+            [],
+        )
+
+        self.assertNotContains(
+            response,
+            self.hoi_vien_khong_co_goi.ho_ten,
         )
 
     def test_le_tan_khong_co_ho_so_bi_tu_choi(
@@ -355,6 +577,11 @@ class QuanLyDiemDanhTests(TestCase):
         self.assertEqual(
             DiemDanh.objects.count(),
             0,
+        )
+        self.assertFalse(
+            DiemDanh.objects.filter(
+                hoi_vien=self.hoi_vien_khong_co_goi,
+            ).exists()
         )
 
     def test_cho_phep_diem_danh_nhieu_lan_trong_ngay(

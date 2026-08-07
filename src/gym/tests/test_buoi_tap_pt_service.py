@@ -19,6 +19,7 @@ from gym.services.buoi_tap_pt import (
     cap_nhat_ket_qua_buoi_tap_pt,
     huy_buoi_tap_pt,
     tao_buoi_tap_pt,
+    tao_buoi_tap_pt_cho_hoi_vien,
     tao_buoi_tap_pt_tu_doi_tuong,
 )
 from gym.services.dang_ky_goi import tao_dang_ky_va_hoa_don
@@ -152,6 +153,31 @@ class BuoiTapPTServiceTests(TestCase):
             truong,
             context.exception.message_dict,
         )
+
+    def tao_dang_ky_pt_tiep_theo(
+        self,
+        *,
+        ngay_dang_ky=None,
+    ):
+        dang_ky, _ = tao_dang_ky_va_hoa_don(
+            hoi_vien=self.hoi_vien_1,
+            goi_tap=self.goi_pt,
+            le_tan=self.le_tan,
+            ngay_dang_ky=(
+                ngay_dang_ky
+                if ngay_dang_ky is not None
+                else self.hom_nay
+            ),
+            ngay_bat_dau=(
+                self.dang_ky_pt_tuong_lai.ngay_ket_thuc
+                + timedelta(days=1)
+            ),
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.TIEN_MAT
+            ),
+        )
+
+        return dang_ky
 
     def test_duoc_dung_som_buoi_pt_khi_co_quyen_vao_gym(self):
         buoi_tap = tao_buoi_tap_pt(
@@ -733,3 +759,109 @@ class BuoiTapPTServiceTests(TestCase):
                     ly_do_huy="Hủy lại",
                 ),
             )
+
+    def test_tu_dong_chon_dang_ky_pt_dang_ky_truoc(
+        self,
+    ):
+        dang_ky_pt_moi = self.tao_dang_ky_pt_tiep_theo(
+            ngay_dang_ky=(
+                self.hom_nay + timedelta(days=1)
+            ),
+        )
+
+        buoi_tap = tao_buoi_tap_pt_cho_hoi_vien(
+            hoi_vien=self.hoi_vien_1,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=(
+                self.hom_nay + timedelta(days=1)
+            ),
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+            ghi_chu="Kiểm thử ưu tiên đăng ký cũ",
+        )
+
+        self.assertEqual(
+            buoi_tap.dang_ky_id,
+            self.dang_ky_pt_tuong_lai.ma_dk,
+        )
+
+        self.assertNotEqual(
+            buoi_tap.dang_ky_id,
+            dang_ky_pt_moi.ma_dk,
+        )
+
+    def test_cung_ngay_dang_ky_uu_tien_ma_dk_nho_hon(
+        self,
+    ):
+        dang_ky_pt_moi = self.tao_dang_ky_pt_tiep_theo(
+            ngay_dang_ky=self.hom_nay,
+        )
+
+        self.assertLess(
+            self.dang_ky_pt_tuong_lai.ma_dk,
+            dang_ky_pt_moi.ma_dk,
+        )
+
+        buoi_tap = tao_buoi_tap_pt_cho_hoi_vien(
+            hoi_vien=self.hoi_vien_1,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        self.assertEqual(
+            buoi_tap.dang_ky_id,
+            self.dang_ky_pt_tuong_lai.ma_dk,
+        )
+
+    def test_het_kha_nang_xep_thi_chuyen_sang_dang_ky_pt_tiep_theo(
+        self,
+    ):
+        dang_ky_pt_moi = self.tao_dang_ky_pt_tiep_theo(
+            ngay_dang_ky=self.hom_nay,
+        )
+
+        buoi_1 = tao_buoi_tap_pt_cho_hoi_vien(
+            hoi_vien=self.hoi_vien_1,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(9, 0),
+            gio_ket_thuc=time(10, 0),
+        )
+
+        buoi_2 = tao_buoi_tap_pt_cho_hoi_vien(
+            hoi_vien=self.hoi_vien_1,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(10, 0),
+            gio_ket_thuc=time(11, 0),
+        )
+
+        buoi_3 = tao_buoi_tap_pt_cho_hoi_vien(
+            hoi_vien=self.hoi_vien_1,
+            huan_luyen_vien=self.pt_1,
+            le_tan=self.le_tan,
+            ngay_tap=self.hom_nay,
+            gio_bat_dau=time(11, 0),
+            gio_ket_thuc=time(12, 0),
+        )
+
+        self.assertEqual(
+            buoi_1.dang_ky_id,
+            self.dang_ky_pt_tuong_lai.ma_dk,
+        )
+
+        self.assertEqual(
+            buoi_2.dang_ky_id,
+            self.dang_ky_pt_tuong_lai.ma_dk,
+        )
+
+        self.assertEqual(
+            buoi_3.dang_ky_id,
+            dang_ky_pt_moi.ma_dk,
+        )

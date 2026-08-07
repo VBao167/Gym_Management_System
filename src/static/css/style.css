@@ -743,3 +743,58 @@ body {
   color: var(--muted);
   font-size: 13px;
 }
+
+.detail-card .schedule-filter-form {
+  margin: 0;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #d9e2ef;
+}
+
+.detail-card .schedule-results-heading {
+  margin-top: 24px;
+}
+
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.member-search-form {
+  margin: 0;
+}
+
+.member-search-form .form-actions {
+  margin-top: 14px;
+}
+
+.attendance-form {
+  margin-top: 24px;
+}
+
+.attendance-results {
+  margin-top: 26px;
+}
+
+.attendance-row-button {
+  padding: 9px 15px;
+  white-space: nowrap;
+}
+
+.attendance-form .table-container {
+  margin-top: 0;
+}
+
+.pt-member-search-form {
+  margin-bottom: 28px;
+}
+
+.pt-trainer-select-group {
+  margin-top: 12px;
+}
+
+.pt-trainer-select-group .form-select {
+  min-height: 42px;
+  padding: 8px 12px;
+}

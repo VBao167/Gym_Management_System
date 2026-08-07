@@ -12,11 +12,11 @@
   <section class="page-section">
     <div class="page-heading">
       <div>
-        <h2>Thông tin buổi tập PT</h2>
+        <h2>Xếp buổi tập PT</h2>
 
         <p>
-          Chọn đăng ký gói PT, Huấn luyện viên
-          và thời gian dự kiến của buổi tập.
+          Tìm Hội viên có buổi PT, sau đó chọn
+          Huấn luyện viên và thời gian tập.
         </p>
 
         <p>
@@ -26,43 +26,221 @@
       </div>
     </div>
 
-    <form method="post" novalidate>
-      {% csrf_token %}
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Tìm Hội viên</h3>
+      </div>
 
-      {% if form.non_field_errors %}
-        <div class="error-message">
-          {{ form.non_field_errors }}
-        </div>
-      {% endif %}
-
-      {% for field in form %}
+    <form
+            method="get"
+            class="pt-member-search-form"
+        >
         <div class="form-group">
-          <label for="{{ field.id_for_label }}">
-            {{ field.label }}
+          <label for="id_tu_khoa">
+            Mã, họ tên, số điện thoại hoặc email
           </label>
 
-          {{ field }}
+          <input
+            id="id_tu_khoa"
+            class="form-input"
+            name="tu_khoa"
+            type="text"
+            value="{{ tu_khoa }}"
+            placeholder="Nhập thông tin Hội viên"
+          />
+        </div>
 
-          {% for error in field.errors %}
+        <div class="form-actions">
+          <button
+            class="primary-button"
+            type="submit"
+          >
+            Tìm kiếm
+          </button>
+
+          {% if tu_khoa %}
+            <a
+              class="secondary-button"
+              href="{% url 'gym:tao_buoi_tap_pt_moi' %}"
+            >
+              Xóa tìm kiếm
+            </a>
+          {% endif %}
+        </div>
+    </form>
+
+      <div class="detail-card-heading">
+        <h3>Hội viên có thể xếp buổi PT</h3>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã Hội viên</th>
+              <th>Họ và tên</th>
+              <th>Số điện thoại</th>
+              <th>Buổi PT có thể xếp</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for thong_tin in cac_hoi_vien %}
+              <tr>
+                <td>
+                  <strong>
+                    {{ thong_tin.hoi_vien.ma_hv }}
+                  </strong>
+                </td>
+
+                <td>
+                  {{ thong_tin.hoi_vien.ho_ten }}
+                </td>
+
+                <td>
+                  {{ thong_tin.hoi_vien.sdt }}
+                </td>
+
+                <td>
+                  {{ thong_tin.so_buoi_pt_co_the_xep }}
+                </td>
+
+                <td>
+                  <a
+                    class="primary-button"
+                    href="?hoi_vien={{ thong_tin.hoi_vien.ma_hv }}{% if tu_khoa %}&tu_khoa={{ tu_khoa|urlencode }}{% endif %}"
+                  >
+                    Chọn
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td
+                  colspan="5"
+                  class="empty-state"
+                >
+                  Không tìm thấy Hội viên còn buổi PT
+                  có thể xếp lịch.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if hoi_vien_da_chon %}
+      <div class="detail-card">
+        <div class="detail-card-heading">
+          <h3>Thông tin buổi tập PT</h3>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span>Mã Hội viên</span>
+            <strong>
+              {{ hoi_vien_da_chon.ma_hv }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Họ và tên</span>
+            <strong>
+              {{ hoi_vien_da_chon.ho_ten }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Số điện thoại</span>
+            <strong>
+              {{ hoi_vien_da_chon.sdt }}
+            </strong>
+          </div>
+
+          <div class="detail-item">
+            <span>Tổng buổi PT có thể xếp</span>
+            <strong>
+              {{ so_buoi_pt_cua_hoi_vien_da_chon }}
+            </strong>
+          </div>
+        </div>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <input
+            type="hidden"
+            name="tu_khoa"
+            value="{{ tu_khoa }}"
+          />
+
+          {{ form.hoi_vien }}
+
+          {% if form.non_field_errors %}
+            <div class="error-message">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
+
+          {% for error in form.hoi_vien.errors %}
             <p class="error-message">
               {{ error }}
             </p>
           {% endfor %}
-        </div>
-      {% endfor %}
 
-      <div class="form-actions">
-        <button class="primary-button" type="submit">
-          Xác nhận xếp lịch
-        </button>
+        {% for field in form.visible_fields %}
+            <div
+                class="form-group{% if field.name == 'huan_luyen_vien' %} pt-trainer-select-group{% endif %}"
+            >
+                {% if field.name != "huan_luyen_vien" %}
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                    </label>
+                {% endif %}
 
-        <a
-          class="secondary-button"
-          href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
-        >
-          Quay lại danh sách
-        </a>
+                {{ field }}
+
+                {% for error in field.errors %}
+                    <p class="error-message">
+                        {{ error }}
+                    </p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+          <div class="form-actions">
+            <button
+              class="primary-button"
+              type="submit"
+            >
+              Xác nhận xếp lịch
+            </button>
+
+            <a
+              class="secondary-button"
+              href="{% url 'gym:tao_buoi_tap_pt_moi' %}{% if tu_khoa %}?tu_khoa={{ tu_khoa|urlencode }}{% endif %}"
+            >
+              Chọn Hội viên khác
+            </a>
+
+            <a
+              class="secondary-button"
+              href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
+            >
+              Quay lại danh sách
+            </a>
+          </div>
+        </form>
       </div>
-    </form>
+    {% else %}
+      <div class="detail-card">
+        <p class="empty-state">
+          Hãy chọn một Hội viên ở danh sách phía trên
+          để nhập thông tin buổi tập PT.
+        </p>
+      </div>
+    {% endif %}
   </section>
 {% endblock %}

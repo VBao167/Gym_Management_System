@@ -1,7 +1,217 @@
-{% extends "base.html" %} {% block title %} Lễ tân | Hệ thống quản lý phòng Gym
-{% endblock %} {% block content %}
-<section>
-  <h2>Khu vực Lễ tân.</h2>
-  <p>Chào mừng {{ request.user.username }}.</p>
-</section>
+{% extends "base.html" %}
+
+{% block title %}
+  Khu vực Lễ tân | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Khu vực Lễ tân
+{% endblock %}
+
+{% block content %}
+  <section class="page-section">
+    <div class="page-heading">
+      <div>
+        <h2>Xin chào {{ le_tan.ho_ten }}</h2>
+
+        <p>
+          Theo dõi hoạt động điểm danh và lịch tập PT
+          theo từng ngày.
+        </p>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="page-heading">
+        <div>
+          <h3>Điểm danh Hội viên</h3>
+
+          <p>
+            Ghi nhận Hội viên vào phòng tập và xem
+            các lượt điểm danh gần nhất trong ngày.
+          </p>
+        </div>
+
+        <a
+          class="primary-button"
+          href="{% url 'gym:tao_diem_danh_moi' %}"
+        >
+          Điểm danh Hội viên
+        </a>
+      </div>
+
+      <div class="detail-card-heading">
+        <h3>
+          Điểm danh gần nhất ngày
+          {{ ngay_duoc_chon|date:"d/m/Y" }}
+        </h3>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã điểm danh</th>
+              <th>Hội viên</th>
+              <th>Thời gian</th>
+              <th>Lễ tân thực hiện</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for diem_danh in cac_lan_diem_danh_gan_nhat %}
+              <tr>
+                <td>
+                  <strong>
+                    {{ diem_danh.ma_dd }}
+                  </strong>
+                </td>
+
+                <td>
+                  {{ diem_danh.hoi_vien.ma_hv }}
+                  —
+                  {{ diem_danh.hoi_vien.ho_ten }}
+                </td>
+
+                <td>
+                  {{ diem_danh.thoi_gian_diem_danh|date:"H:i" }}
+                </td>
+
+                <td>
+                  {{ diem_danh.le_tan.ma_lt }}
+                  —
+                  {{ diem_danh.le_tan.ho_ten }}
+                </td>
+
+                <td>
+                  {{ diem_danh.ghi_chu|default:"Không có" }}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td
+                  colspan="5"
+                  class="empty-state"
+                >
+                  Chưa có lượt điểm danh trong ngày này.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-card-heading">
+        <h3>Lịch tập PT theo ngày</h3>
+      </div>
+
+      <form
+          method="get"
+          class="schedule-filter-form"
+      >
+        <div class="form-group">
+          <label for="id_ngay">
+            Chọn ngày xem lịch
+          </label>
+
+          <input
+            id="id_ngay"
+            name="ngay"
+            type="date"
+            value="{{ ngay_duoc_chon|date:'Y-m-d' }}"
+          />
+        </div>
+
+        {% if ngay_khong_hop_le %}
+          <p class="error-message">
+            Ngày được nhập không hợp lệ.
+            Hệ thống đang hiển thị dữ liệu hôm nay.
+          </p>
+        {% endif %}
+
+        <button
+          class="secondary-button"
+          type="submit"
+        >
+          Xem lịch
+        </button>
+      </form>
+
+      <div class="detail-card-heading schedule-results-heading">
+          <h3>
+            Các buổi tập PT ngày
+            {{ ngay_duoc_chon|date:"d/m/Y" }}
+          </h3>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã buổi</th>
+              <th>Hội viên</th>
+              <th>Huấn luyện viên</th>
+              <th>Thời gian</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for buoi_tap in cac_buoi_tap_trong_ngay %}
+              <tr>
+                <td>
+                  <strong>
+                    {{ buoi_tap.ma_buoi }}
+                  </strong>
+                </td>
+
+                <td>
+                  {{ buoi_tap.dang_ky.hoi_vien.ma_hv }}
+                  —
+                  {{ buoi_tap.dang_ky.hoi_vien.ho_ten }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.huan_luyen_vien.ma_pt }}
+                  —
+                  {{ buoi_tap.huan_luyen_vien.ho_ten }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.gio_bat_dau|time:"H:i" }}
+                  –
+                  {{ buoi_tap.gio_ket_thuc|time:"H:i" }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.get_trang_thai_display }}
+                </td>
+
+                <td>
+                  <a
+                    href="{% url 'gym:chi_tiet_buoi_tap_pt' buoi_tap.ma_buoi %}"
+                  >
+                    Xem chi tiết
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td
+                  colspan="6"
+                  class="empty-state"
+                >
+                  Không có buổi tập PT trong ngày này.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 {% endblock %}

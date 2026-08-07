@@ -128,6 +128,104 @@ class QuanLyDangKyHoaDonTests(TestCase):
 
         return response, dang_ky
 
+    def tao_dang_ky_cho_danh_sach(
+        self,
+        *,
+        thu_tu,
+        ngay_dang_ky,
+        trang_thai=None,
+    ):
+        hoi_vien = tao_hoi_vien(
+            ho_ten=(
+                f"Hội viên danh sách {thu_tu}"
+            ),
+            gioi_tinh="Nam",
+            ngay_sinh=date(
+                2001,
+                3,
+                thu_tu,
+            ),
+            sdt=f"09320000{thu_tu:02d}",
+            email=(
+                f"hoi.vien.danh.sach.{thu_tu}"
+                "@example.com"
+            ),
+            dia_chi="TP.HCM",
+        )
+
+        dang_ky, _ = tao_dang_ky_va_hoa_don(
+            hoi_vien=hoi_vien,
+            goi_tap=self.goi_dang_kinh_doanh,
+            le_tan=self.le_tan,
+            ngay_dang_ky=ngay_dang_ky,
+            ngay_bat_dau=ngay_dang_ky,
+            phuong_thuc_thanh_toan=(
+                HoaDon.PhuongThucThanhToan.TIEN_MAT
+            ),
+        )
+
+        if trang_thai is not None:
+            DangKyGoiTap.objects.filter(
+                pk=dang_ky.pk,
+            ).update(
+                trang_thai=trang_thai,
+            )
+
+            dang_ky.refresh_from_db()
+
+        return dang_ky
+
+    def test_danh_sach_sap_xep_theo_ma_dang_ky(
+        self
+    ):
+        hom_nay = timezone.localdate()
+
+        dang_ky_1 = (
+            self.tao_dang_ky_cho_danh_sach(
+                thu_tu=1,
+                ngay_dang_ky=(
+                    hom_nay - timedelta(days=2)
+                ),
+            )
+        )
+
+        dang_ky_2 = (
+            self.tao_dang_ky_cho_danh_sach(
+                thu_tu=2,
+                ngay_dang_ky=hom_nay,
+            )
+        )
+
+        dang_ky_3 = (
+            self.tao_dang_ky_cho_danh_sach(
+                thu_tu=3,
+                ngay_dang_ky=(
+                    hom_nay - timedelta(days=1)
+                ),
+            )
+        )
+
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            self.url_danh_sach
+        )
+
+        self.assertEqual(
+            [
+                dang_ky.ma_dk
+                for dang_ky
+                in response.context[
+                    "cac_dang_ky"
+                ]
+            ],
+            [
+                dang_ky_1.ma_dk,
+                dang_ky_2.ma_dk,
+                dang_ky_3.ma_dk,
+            ],
+        )
+
     def test_admin_xem_danh_sach_nhung_khong_co_nut_tao(
         self
     ):
@@ -693,4 +791,205 @@ class QuanLyDangKyHoaDonTests(TestCase):
         self.assertEqual(
             HoaDon.objects.count(),
             so_hoa_don_ban_dau,
+        )
+
+    def test_danh_sach_co_day_du_bo_loc_trang_thai(
+        self
+    ):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            self.url_danh_sach
+        )
+
+        self.assertEqual(
+            response.context[
+                "cac_bo_loc_trang_thai"
+            ],
+            [
+                (
+                    "",
+                    "Tất cả",
+                ),
+                (
+                    DangKyGoiTap
+                    .TrangThai
+                    .HOAT_DONG,
+                    "Hoạt động",
+                ),
+                (
+                    DangKyGoiTap
+                    .TrangThai
+                    .CHUA_KICH_HOAT,
+                    "Chưa kích hoạt",
+                ),
+                (
+                    DangKyGoiTap
+                    .TrangThai
+                    .HET_HAN,
+                    "Hết hạn",
+                ),
+            ],
+        )
+
+    def test_loc_dang_ky_theo_trang_thai(
+        self
+    ):
+        hom_nay = timezone.localdate()
+
+        dang_ky_hoat_dong = (
+            self.tao_dang_ky_cho_danh_sach(
+                thu_tu=1,
+                ngay_dang_ky=hom_nay,
+                trang_thai=(
+                    DangKyGoiTap
+                    .TrangThai
+                    .HOAT_DONG
+                ),
+            )
+        )
+
+        dang_ky_chua_kich_hoat = (
+            self.tao_dang_ky_cho_danh_sach(
+                thu_tu=2,
+                ngay_dang_ky=hom_nay,
+                trang_thai=(
+                    DangKyGoiTap
+                    .TrangThai
+                    .CHUA_KICH_HOAT
+                ),
+            )
+        )
+
+        dang_ky_het_han = (
+            self.tao_dang_ky_cho_danh_sach(
+                thu_tu=3,
+                ngay_dang_ky=hom_nay,
+                trang_thai=(
+                    DangKyGoiTap
+                    .TrangThai
+                    .HET_HAN
+                ),
+            )
+        )
+
+        self.client.force_login(self.admin)
+
+        cac_truong_hop = (
+            (
+                DangKyGoiTap
+                .TrangThai
+                .HOAT_DONG,
+                dang_ky_hoat_dong,
+            ),
+            (
+                DangKyGoiTap
+                .TrangThai
+                .CHUA_KICH_HOAT,
+                dang_ky_chua_kich_hoat,
+            ),
+            (
+                DangKyGoiTap
+                .TrangThai
+                .HET_HAN,
+                dang_ky_het_han,
+            ),
+        )
+
+        with patch(
+            (
+                "gym.views."
+                "cap_nhat_trang_thai_toan_bo"
+            )
+        ):
+            for trang_thai, dang_ky_mong_doi in (
+                cac_truong_hop
+            ):
+                with self.subTest(
+                    trang_thai=trang_thai
+                ):
+                    response = self.client.get(
+                        self.url_danh_sach,
+                        {
+                            "trang_thai": (
+                                trang_thai
+                            ),
+                        },
+                    )
+
+                    self.assertEqual(
+                        response.status_code,
+                        200,
+                    )
+
+                    self.assertEqual(
+                        response.context[
+                            "trang_thai_duoc_chon"
+                        ],
+                        trang_thai,
+                    )
+
+                    self.assertEqual(
+                        list(
+                            response.context[
+                                "cac_dang_ky"
+                            ]
+                        ),
+                        [
+                            dang_ky_mong_doi
+                        ],
+                    )
+
+    def test_trang_thai_loc_khong_hop_le_quay_ve_tat_ca(
+        self
+    ):
+        hom_nay = timezone.localdate()
+
+        dang_ky_1 = (
+            self.tao_dang_ky_cho_danh_sach(
+                thu_tu=1,
+                ngay_dang_ky=hom_nay,
+            )
+        )
+
+        dang_ky_2 = (
+            self.tao_dang_ky_cho_danh_sach(
+                thu_tu=2,
+                ngay_dang_ky=hom_nay,
+            )
+        )
+
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            self.url_danh_sach,
+            {
+                "trang_thai": (
+                    "TrangThaiKhongTonTai"
+                ),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            response.context[
+                "trang_thai_duoc_chon"
+            ],
+            "",
+        )
+
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_dang_ky"
+                ]
+            ),
+            [
+                dang_ky_1,
+                dang_ky_2,
+            ],
         )

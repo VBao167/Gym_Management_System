@@ -29,6 +29,17 @@
       {% endif %}
     </div>
 
+    <div class="filter-actions">
+      {% for gia_tri, nhan in cac_bo_loc_trang_thai %}
+        <a
+          class="{% if trang_thai_duoc_chon == gia_tri %}primary-button{% else %}secondary-button{% endif %}"
+          href="{{ request.path }}{% if gia_tri %}?trang_thai={{ gia_tri }}{% endif %}"
+        >
+          {{ nhan }}
+        </a>
+      {% endfor %}
+    </div>
+
     <div class="table-container">
       <table class="data-table">
         <thead>
@@ -98,7 +109,12 @@
           {% empty %}
             <tr>
               <td colspan="8" class="empty-state">
-                Chưa có đăng ký gói trong hệ thống.
+                {% if trang_thai_duoc_chon %}
+                  Không có đăng ký gói thuộc trạng thái
+                  đang được chọn.
+                {% else %}
+                  Chưa có đăng ký gói trong hệ thống.
+                {% endif %}
               </td>
             </tr>
           {% endfor %}

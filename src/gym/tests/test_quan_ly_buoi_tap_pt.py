@@ -316,10 +316,13 @@ class QuanLyBuoiTapPTTests(TestCase):
             response,
             "gym/buoi_tap_pt/tao_buoi_tap_pt.html",
         )
+
+        form = response.context["form"]
+
         self.assertEqual(
-            list(response.context["form"].fields),
+            list(form.fields),
             [
-                "dang_ky",
+                "hoi_vien",
                 "huan_luyen_vien",
                 "ngay_tap",
                 "gio_bat_dau",
@@ -328,26 +331,48 @@ class QuanLyBuoiTapPTTests(TestCase):
             ],
         )
 
-        queryset_dang_ky = (
-            response.context["form"]
-            .fields["dang_ky"]
-            .queryset
+        self.assertTrue(
+            form.fields["hoi_vien"].widget.is_hidden
+        )
+
+        queryset_hoi_vien = (
+            form.fields["hoi_vien"].queryset
         )
         queryset_pt = (
-            response.context["form"]
-            .fields["huan_luyen_vien"]
-            .queryset
+            form.fields[
+                "huan_luyen_vien"
+            ].queryset
         )
 
         self.assertIn(
-            self.dang_ky_pt_tuong_lai,
-            queryset_dang_ky,
+            self.hoi_vien,
+            queryset_hoi_vien,
         )
+
         self.assertIn(self.pt_1, queryset_pt)
         self.assertIn(self.pt_2, queryset_pt)
         self.assertNotIn(
             self.pt_ngung_lam_viec,
             queryset_pt,
+        )
+
+        cac_hoi_vien = response.context[
+            "cac_hoi_vien"
+        ]
+
+        self.assertEqual(
+            len(cac_hoi_vien),
+            1,
+        )
+        self.assertEqual(
+            cac_hoi_vien[0]["hoi_vien"],
+            self.hoi_vien,
+        )
+        self.assertEqual(
+            cac_hoi_vien[0][
+                "so_buoi_pt_co_the_xep"
+            ],
+            2,
         )
 
     def test_le_tan_khong_co_ho_so_bi_tu_choi(
@@ -403,9 +428,7 @@ class QuanLyBuoiTapPTTests(TestCase):
         response = self.client.post(
             self.url_tao,
             {
-                "dang_ky": (
-                    self.dang_ky_pt_tuong_lai.pk
-                ),
+               "hoi_vien": self.hoi_vien.pk,
                 "huan_luyen_vien": self.pt_1.pk,
                 "ngay_tap": self.hom_nay.isoformat(),
                 "gio_bat_dau": "09:00",
@@ -466,9 +489,7 @@ class QuanLyBuoiTapPTTests(TestCase):
         response = self.client.post(
             self.url_tao,
             {
-                "dang_ky": (
-                    self.dang_ky_pt_tuong_lai.pk
-                ),
+                "hoi_vien": self.hoi_vien.pk,
                 "huan_luyen_vien": self.pt_1.pk,
                 "ngay_tap": self.hom_nay.isoformat(),
                 "gio_bat_dau": "10:00",
@@ -506,9 +527,7 @@ class QuanLyBuoiTapPTTests(TestCase):
         response = self.client.post(
             self.url_tao,
             {
-                "dang_ky": (
-                    self.dang_ky_pt_tuong_lai.pk
-                ),
+                "hoi_vien": self.hoi_vien.pk,
                 "huan_luyen_vien": self.pt_2.pk,
                 "ngay_tap": self.hom_nay.isoformat(),
                 "gio_bat_dau": "09:30",
@@ -519,7 +538,7 @@ class QuanLyBuoiTapPTTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(
-            "dang_ky",
+            "__all__",
             response.context["form"].errors,
         )
         self.assertEqual(
@@ -1016,4 +1035,157 @@ class QuanLyBuoiTapPTTests(TestCase):
         self.assertEqual(
             buoi_tap.trang_thai,
             BuoiTapPT.TrangThai.DA_LEN_LICH,
+        )
+
+    def test_chon_hoi_vien_hien_form_xep_lich(
+        self
+    ):
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_tao,
+            {
+                "hoi_vien": self.hoi_vien.pk,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            response.context["hoi_vien_da_chon"],
+            self.hoi_vien,
+        )
+
+        self.assertEqual(
+            response.context[
+                "so_buoi_pt_cua_hoi_vien_da_chon"
+            ],
+            2,
+        )
+
+        self.assertEqual(
+            response.context[
+                "form"
+            ]["hoi_vien"].value(),
+            self.hoi_vien.pk,
+        )
+
+        self.assertContains(
+            response,
+            "Thông tin buổi tập PT",
+        )
+        self.assertContains(
+            response,
+            self.hoi_vien.ho_ten,
+        )
+
+    def test_tim_hoi_vien_xep_pt_theo_nhieu_thong_tin(
+        self
+    ):
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        cac_tu_khoa = (
+            self.hoi_vien.ma_hv,
+            "kiểm thử lịch PT",
+            "0981000005",
+            "hoi.vien.buoi.pt@example.com",
+        )
+
+        for tu_khoa in cac_tu_khoa:
+            with self.subTest(
+                tu_khoa=tu_khoa
+            ):
+                response = self.client.get(
+                    self.url_tao,
+                    {
+                        "tu_khoa": tu_khoa,
+                    },
+                )
+
+                self.assertEqual(
+                    response.status_code,
+                    200,
+                )
+
+                cac_hoi_vien = (
+                    response.context[
+                        "cac_hoi_vien"
+                    ]
+                )
+
+                self.assertEqual(
+                    len(cac_hoi_vien),
+                    1,
+                )
+                self.assertEqual(
+                    cac_hoi_vien[0][
+                        "hoi_vien"
+                    ],
+                    self.hoi_vien,
+                )
+
+    def test_nhieu_dang_ky_pt_chi_hien_mot_dong_hoi_vien(
+        self
+    ):
+        dang_ky_pt_thu_hai, _ = (
+            tao_dang_ky_va_hoa_don(
+                hoi_vien=self.hoi_vien,
+                goi_tap=self.goi_pt,
+                le_tan=self.le_tan,
+                ngay_dang_ky=self.hom_nay,
+                ngay_bat_dau=(
+                    self.dang_ky_pt_tuong_lai
+                    .ngay_ket_thuc
+                    + timedelta(days=1)
+                ),
+                phuong_thuc_thanh_toan=(
+                    HoaDon.PhuongThucThanhToan.TIEN_MAT
+                ),
+            )
+        )
+
+        self.client.force_login(
+            self.le_tan.tai_khoan
+        )
+
+        response = self.client.get(
+            self.url_tao
+        )
+
+        cac_hoi_vien = response.context[
+            "cac_hoi_vien"
+        ]
+
+        self.assertEqual(
+            len(cac_hoi_vien),
+            1,
+        )
+        self.assertEqual(
+            cac_hoi_vien[0]["hoi_vien"],
+            self.hoi_vien,
+        )
+
+        self.assertEqual(
+            cac_hoi_vien[0][
+                "so_buoi_pt_co_the_xep"
+            ],
+            4,
+        )
+
+        self.assertContains(
+            response,
+            self.hoi_vien.ma_hv,
+        )
+
+        self.assertNotContains(
+            response,
+            self.dang_ky_pt_tuong_lai.ma_dk,
+        )
+        self.assertNotContains(
+            response,
+            dang_ky_pt_thu_hai.ma_dk,
         )

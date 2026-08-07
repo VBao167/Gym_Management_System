@@ -44,6 +44,15 @@ class PhanQuyenVaiTroTests(TestCase):
             dia_chi="TP.HCM",
         )
 
+        self.le_tan_phan_quyen = tao_le_tan(
+            ho_ten="Lễ tân kiểm thử phân quyền",
+            gioi_tinh="Nữ",
+            ngay_sinh=date(2000, 2, 2),
+            sdt="0939000002",
+            email="le.tan.phan.quyen@example.com",
+            dia_chi="TP.HCM",
+        )
+
         self.tai_khoan_theo_vai_tro = {
             TaiKhoan.VaiTro.ADMIN:
                 TaiKhoan.objects.create_user(
@@ -51,12 +60,9 @@ class PhanQuyenVaiTroTests(TestCase):
                     password="1",
                     vai_tro=TaiKhoan.VaiTro.ADMIN,
                 ),
-            TaiKhoan.VaiTro.LE_TAN:
-                TaiKhoan.objects.create_user(
-                    username="kiem_thu_le_tan",
-                    password="1",
-                    vai_tro=TaiKhoan.VaiTro.LE_TAN,
-                ),
+            TaiKhoan.VaiTro.LE_TAN: (
+                self.le_tan_phan_quyen.tai_khoan
+            ),
             TaiKhoan.VaiTro.PT:
                 TaiKhoan.objects.create_user(
                     username="kiem_thu_pt",
@@ -75,7 +81,7 @@ class PhanQuyenVaiTroTests(TestCase):
             ),
             TaiKhoan.VaiTro.LE_TAN: (
                 "gym:trang_le_tan",
-                "Khu vực Lễ tân.",
+                "Khu vực Lễ tân",
             ),
             TaiKhoan.VaiTro.PT: (
                 "gym:trang_pt",
