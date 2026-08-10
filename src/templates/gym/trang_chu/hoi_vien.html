@@ -119,7 +119,7 @@
 
     <div class="detail-card">
       <div class="detail-card-heading">
-        <h3>Gói tập đang hiệu lực</h3>
+        <h3>Gói tập hiện tại</h3>
       </div>
 
       {% if dang_ky_dang_hoat_dong %}
@@ -188,60 +188,6 @@
         </p>
       {% endif %}
     </div>
-
-    {% if dang_ky_sap_kich_hoat %}
-      <div class="detail-card">
-        <div class="detail-card-heading">
-          <h3>Gói tập tiếp theo</h3>
-        </div>
-
-        <div class="detail-grid">
-          <div class="detail-item">
-            <span>Mã đăng ký</span>
-            <strong>
-              {{ dang_ky_sap_kich_hoat.ma_dk }}
-            </strong>
-          </div>
-
-          <div class="detail-item">
-            <span>Gói tập</span>
-            <strong>
-              {{ dang_ky_sap_kich_hoat.goi_tap.ten_goi }}
-            </strong>
-          </div>
-
-          <div class="detail-item">
-            <span>Ngày bắt đầu</span>
-            <strong>
-              {{ dang_ky_sap_kich_hoat.ngay_bat_dau|date:"d/m/Y" }}
-            </strong>
-          </div>
-
-          <div class="detail-item">
-            <span>Ngày kết thúc</span>
-            <strong>
-              {{ dang_ky_sap_kich_hoat.ngay_ket_thuc|date:"d/m/Y" }}
-            </strong>
-          </div>
-
-          {% if dang_ky_sap_kich_hoat.so_buoi_pt_dang_ky > 0 %}
-            <div class="detail-item">
-              <span>Buổi PT đăng ký</span>
-              <strong>
-                {{ dang_ky_sap_kich_hoat.so_buoi_pt_dang_ky }}
-              </strong>
-            </div>
-
-            <div class="detail-item">
-              <span>Buổi PT có thể xếp</span>
-              <strong>
-                {{ dang_ky_sap_kich_hoat.so_buoi_pt_co_the_xep_lich }}
-              </strong>
-            </div>
-          {% endif %}
-        </div>
-      </div>
-    {% endif %}
 
     <div class="detail-card">
       <div class="detail-card-heading">

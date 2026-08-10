@@ -14,7 +14,7 @@
 
     <link
         rel="stylesheet"
-        href="{% static 'css/style.css' %}?v=20260806-3"
+        href="{% static 'css/style.css' %}?v=20260810-2"
     />
   </head>
 
@@ -31,192 +31,160 @@
             </div>
           </div>
 
-          <nav class="sidebar-nav">
-            {% if request.user.vai_tro == "Admin" %}
-              <p class="sidebar-heading">QUẢN TRỊ HỆ THỐNG</p>
+            <nav class="sidebar-nav">
+                {% if request.user.vai_tro == "Admin" %}
+                    <p class="sidebar-heading">QUẢN TRỊ HỆ THỐNG</p>
 
-            <a
-                href="{% url 'gym:trang_quan_tri' %}"
-                class="sidebar-link {% if request.resolver_match.url_name == 'trang_quan_tri' %}is-active{% endif %}"
-            >
-                <span class="sidebar-icon">01</span>
-                Tổng quan
-            </a>
+                    <a
+                    href="{% url 'gym:trang_quan_tri' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'trang_quan_tri' %} is-active{% endif %}"
+                    >
+                    Tổng quan
+                    </a>
 
-            <a
-                href="{% url 'accounts:danh_sach_tai_khoan' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_tai_khoan' or request.resolver_match.url_name == 'dat_lai_mat_khau' or request.resolver_match.url_name == 'doi_mat_khau_cua_toi' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">02</span>
-                Tài khoản
-            </a>
+                    <a
+                    href="{% url 'accounts:danh_sach_tai_khoan' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_tai_khoan' or request.resolver_match.url_name == 'dat_lai_mat_khau' or request.resolver_match.url_name == 'doi_mat_khau_cua_toi' %} is-active{% endif %}"
+                    >
+                    Tài khoản
+                    </a>
 
-            <a
-                href="{% url 'gym:danh_sach_hoi_vien' %}"
-                class="sidebar-link {% if request.resolver_match.url_name == 'danh_sach_hoi_vien' %}is-active{% endif %}"
-            >
-                <span class="sidebar-icon">03</span>
-                Hội viên
-            </a>
+                    <a
+                    href="{% url 'gym:danh_sach_hoi_vien' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_hoi_vien' %} is-active{% endif %}"
+                    >
+                    Hội viên
+                    </a>
 
-            <a
-                href="{% url 'gym:danh_sach_nhan_vien' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_nhan_vien' or request.resolver_match.url_name == 'tao_nhan_vien_moi' or request.resolver_match.url_name == 'chi_tiet_nhan_vien' or request.resolver_match.url_name == 'chinh_sua_nhan_vien' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">04</span>
-                Nhân viên
-            </a>
+                    <a
+                    href="{% url 'gym:danh_sach_nhan_vien' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_nhan_vien' or request.resolver_match.url_name == 'tao_nhan_vien_moi' or request.resolver_match.url_name == 'chi_tiet_nhan_vien' or request.resolver_match.url_name == 'chinh_sua_nhan_vien' %} is-active{% endif %}"
+                    >
+                    Nhân viên
+                    </a>
 
-            <a
-                href="{% url 'gym:danh_sach_goi_tap' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_goi_tap' or request.resolver_match.url_name == 'tao_goi_tap_moi' or request.resolver_match.url_name == 'chinh_sua_goi_tap' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">05</span>
-                Gói tập
-            </a>
+                    <a
+                    href="{% url 'gym:danh_sach_goi_tap' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_goi_tap' or request.resolver_match.url_name == 'tao_goi_tap_moi' or request.resolver_match.url_name == 'chinh_sua_goi_tap' %} is-active{% endif %}"
+                    >
+                    Gói tập
+                    </a>
 
-            <a
-                href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_dang_ky_hoa_don' or request.resolver_match.url_name == 'tao_dang_ky_hoa_don' or request.resolver_match.url_name == 'chi_tiet_dang_ky_hoa_don' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">06</span>
-                Đăng ký và hóa đơn
-            </a>
+                    <a
+                    href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_dang_ky_hoa_don' or request.resolver_match.url_name == 'tao_dang_ky_hoa_don' or request.resolver_match.url_name == 'chi_tiet_dang_ky_hoa_don' %} is-active{% endif %}"
+                    >
+                    Đăng ký và hóa đơn
+                    </a>
 
-            <a
-                href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'tao_buoi_tap_pt_moi' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">07</span>
-                Lịch tập PT
-            </a>
+                    <a
+                    href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'tao_buoi_tap_pt_moi' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
+                    >
+                    Lịch tập PT
+                    </a>
 
-            <a
-                href="{% url 'gym:danh_sach_diem_danh' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_diem_danh' or request.resolver_match.url_name == 'tao_diem_danh_moi' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">08</span>
-                Điểm danh
-            </a>
+                    <a
+                    href="{% url 'gym:danh_sach_diem_danh' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_diem_danh' or request.resolver_match.url_name == 'tao_diem_danh_moi' %} is-active{% endif %}"
+                    >
+                    Điểm danh
+                    </a>
 
-            <a
-                href="{% url 'gym:bao_cao_thong_ke' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'bao_cao_thong_ke' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">09</span>
-                Báo cáo
-            </a>
+                    <a
+                    href="{% url 'gym:bao_cao_thong_ke' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'bao_cao_thong_ke' %} is-active{% endif %}"
+                    >
+                    Báo cáo
+                    </a>
 
-            {% elif request.user.vai_tro == "LeTan" %}
-              <p class="sidebar-heading">KHU VỰC LỄ TÂN</p>
+                {% elif request.user.vai_tro == "LeTan" %}
+                    <p class="sidebar-heading">KHU VỰC LỄ TÂN</p>
 
-            <a
-                href="{% url 'gym:trang_le_tan' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'trang_le_tan' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">01</span>
-                Trang chính
-            </a>
+                    <a
+                    href="{% url 'gym:trang_le_tan' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'trang_le_tan' %} is-active{% endif %}"
+                    >
+                    Trang chính
+                    </a>
 
-            <a
-                href="{% url 'gym:danh_sach_hoi_vien' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_hoi_vien' or request.resolver_match.url_name == 'tao_hoi_vien_moi' or request.resolver_match.url_name == 'chi_tiet_hoi_vien' or request.resolver_match.url_name == 'chinh_sua_hoi_vien' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">02</span>
-                Hội viên
-            </a>
+                    <a
+                    href="{% url 'gym:danh_sach_hoi_vien' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_hoi_vien' or request.resolver_match.url_name == 'tao_hoi_vien_moi' or request.resolver_match.url_name == 'chi_tiet_hoi_vien' or request.resolver_match.url_name == 'chinh_sua_hoi_vien' %} is-active{% endif %}"
+                    >
+                    Hội viên
+                    </a>
 
-            <a
-                href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_dang_ky_hoa_don' or request.resolver_match.url_name == 'tao_dang_ky_hoa_don' or request.resolver_match.url_name == 'chi_tiet_dang_ky_hoa_don' or request.resolver_match.url_name == 'gia_han_goi_hoi_vien' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">03</span>
-                Đăng ký gói
-            </a>
+                    <a
+                    href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_dang_ky_hoa_don' or request.resolver_match.url_name == 'tao_dang_ky_hoa_don' or request.resolver_match.url_name == 'chi_tiet_dang_ky_hoa_don' or request.resolver_match.url_name == 'gia_han_goi_hoi_vien' %} is-active{% endif %}"
+                    >
+                    Đăng ký gói
+                    </a>
 
-              <a
-                href="{% url 'gym:danh_sach_diem_danh' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_diem_danh' or request.resolver_match.url_name == 'tao_diem_danh_moi' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">04</span>
-                Điểm danh
-            </a>
+                    <a
+                    href="{% url 'gym:danh_sach_diem_danh' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_diem_danh' or request.resolver_match.url_name == 'tao_diem_danh_moi' %} is-active{% endif %}"
+                    >
+                    Điểm danh
+                    </a>
 
-            <a
-                href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
-                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'tao_buoi_tap_pt_moi' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
-            >
-                <span class="sidebar-icon">05</span>
-                Lịch tập PT
-            </a>
+                    <a
+                    href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'tao_buoi_tap_pt_moi' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
+                    >
+                    Lịch tập PT
+                    </a>
 
-            {% elif request.user.vai_tro == "PT" %}
-                <p class="sidebar-heading">
-                    KHU VỰC HUẤN LUYỆN VIÊN
-                </p>
+                {% elif request.user.vai_tro == "PT" %}
+                    <p class="sidebar-heading">KHU VỰC HUẤN LUYỆN VIÊN</p>
 
-                <a
+                    <a
                     href="{% url 'gym:trang_pt' %}"
                     class="sidebar-link{% if request.resolver_match.url_name == 'trang_pt' %} is-active{% endif %}"
-                >
-                    <span class="sidebar-icon">01</span>
+                    >
                     Trang chính
-                </a>
+                    </a>
 
-                <a
+                    <a
                     href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
                     class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
-                >
-                    <span class="sidebar-icon">02</span>
+                    >
                     Lịch tập của tôi
-                </a>
+                    </a>
 
-            {% elif request.user.vai_tro == "HoiVien" %}
-                <p class="sidebar-heading">
-                    KHU VỰC HỘI VIÊN
-                </p>
+                {% elif request.user.vai_tro == "HoiVien" %}
+                    <p class="sidebar-heading">KHU VỰC HỘI VIÊN</p>
 
-                <a
+                    <a
                     href="{% url 'gym:trang_hoi_vien' %}"
                     class="sidebar-link{% if request.resolver_match.url_name == 'trang_hoi_vien' %} is-active{% endif %}"
-                >
-                    <span class="sidebar-icon">01</span>
+                    >
                     Tổng quan
-                </a>
+                    </a>
 
-                <a
+                    <a
                     href="{% url 'gym:goi_tap_cua_toi' %}"
                     class="sidebar-link{% if request.resolver_match.url_name == 'goi_tap_cua_toi' or request.resolver_match.url_name == 'chi_tiet_goi_tap_cua_toi' %} is-active{% endif %}"
-                >
-                    <span class="sidebar-icon">02</span>
+                    >
                     Gói tập của tôi
-                </a>
+                    </a>
 
-                <a
+                    <a
                     href="{% url 'gym:lich_tap_pt_cua_toi' %}"
                     class="sidebar-link{% if request.resolver_match.url_name == 'lich_tap_pt_cua_toi' %} is-active{% endif %}"
-                >
-                    <span class="sidebar-icon">03</span>
+                    >
                     Lịch tập PT
-                </a>
+                    </a>
 
-                <a
+                    <a
                     href="{% url 'gym:lich_su_diem_danh_cua_toi' %}"
                     class="sidebar-link{% if request.resolver_match.url_name == 'lich_su_diem_danh_cua_toi' %} is-active{% endif %}"
-                >
-                    <span class="sidebar-icon">04</span>
+                    >
                     Lịch sử điểm danh
-                </a>
-
-                <a
-                    href="{% url 'accounts:doi_mat_khau_cua_toi' %}"
-                    class="sidebar-link{% if request.resolver_match.url_name == 'doi_mat_khau_cua_toi' %} is-active{% endif %}"
-                >
-                    <span class="sidebar-icon">05</span>
-                    Đổi mật khẩu
-                </a>
-            {% endif %}
-          </nav>
+                    </a>
+                {% endif %}
+            </nav>
 
           <div class="sidebar-footer">
             <span>Đồ án Quản lý phòng Gym</span>
@@ -243,26 +211,51 @@
               </h1>
             </div>
 
-            <div class="user-panel">
-              <div class="user-avatar">
-                {{ request.user.username|first|upper }}
-              </div>
+            <details class="user-menu">
+                <summary class="user-menu-summary">
+                    <div class="user-avatar">
+                    {{ request.user.username|first|upper }}
+                    </div>
 
-              <div class="user-info">
-                <strong>{{ request.user.username }}</strong>
-                <span>{{ request.user.get_vai_tro_display }}</span>
-              </div>
+                    <div class="user-info">
+                    <strong>{{ request.user.username }}</strong>
+                    <span>{{ request.user.get_vai_tro_display }}</span>
+                    </div>
 
-              <form
-                method="post"
-                action="{% url 'accounts:dang_xuat' %}"
-              >
-                {% csrf_token %}
-                <button class="logout-button" type="submit">
-                  Đăng xuất
-                </button>
-              </form>
-            </div>
+                    <span class="user-menu-arrow">⌄</span>
+                </summary>
+
+                <div class="user-menu-dropdown">
+                    <div class="user-menu-header">
+                    <strong>{{ request.user.username }}</strong>
+                    <span>{{ request.user.get_vai_tro_display }}</span>
+                    </div>
+
+                    {% if request.user.vai_tro == "HoiVien" %}
+                    <a
+                        href="{% url 'accounts:doi_mat_khau_cua_toi' %}"
+                        class="user-menu-link"
+                    >
+                        Đổi mật khẩu
+                    </a>
+                    {% endif %}
+
+                    <form
+                    method="post"
+                    action="{% url 'accounts:dang_xuat' %}"
+                    class="user-menu-form"
+                    >
+                    {% csrf_token %}
+
+                    <button
+                        type="submit"
+                        class="user-menu-logout"
+                    >
+                        Đăng xuất
+                    </button>
+                    </form>
+                </div>
+            </details>
           </header>
 
           <main class="content-area">

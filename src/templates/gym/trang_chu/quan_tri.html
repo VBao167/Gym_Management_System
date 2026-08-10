@@ -1,8 +1,16 @@
 {% extends "base.html" %} {% block title %} Quản trị | Hệ thống quản lý phòng
 Gym {% endblock %} {% block content %}
 <section>
-  <h2>Tổng quan hệ thống</h2>
-  <p>Chào mừng {{ request.user.username }}.</p>
+  <div class="dashboard-hero">
+    <div class="dashboard-hero-content">
+      <p class="dashboard-hero-eyebrow">GYM MANAGEMENT SYSTEM</p>
+      <h2>Tổng quan hệ thống</h2>
+      <p>
+        Chào mừng {{ request.user.username }}. Theo dõi nhanh các chỉ số
+        vận hành chính của phòng gym.
+      </p>
+    </div>
+  </div>
 
   <div class="dashboard-grid">
     <article class="dashboard-card">
