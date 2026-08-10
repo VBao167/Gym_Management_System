@@ -207,6 +207,14 @@
                     <span class="sidebar-icon">04</span>
                     Lịch sử điểm danh
                 </a>
+
+                <a
+                    href="{% url 'accounts:doi_mat_khau_cua_toi' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'doi_mat_khau_cua_toi' %} is-active{% endif %}"
+                >
+                    <span class="sidebar-icon">05</span>
+                    Đổi mật khẩu
+                </a>
             {% endif %}
           </nav>
 

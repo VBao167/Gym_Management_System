@@ -816,3 +816,24 @@ class DoiMatKhauTests(TestCase):
                 f"?next={url}"
             ),
         )
+
+    def test_menu_hoi_vien_hien_thi_doi_mat_khau(self):
+        self.client.force_login(
+            self.tai_khoan_hoi_vien
+        )
+
+        response = self.client.get(
+            reverse("gym:trang_hoi_vien")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            reverse(
+                "accounts:doi_mat_khau_cua_toi"
+            ),
+        )
+        self.assertContains(
+            response,
+            "Đổi mật khẩu",
+        )
