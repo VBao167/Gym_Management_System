@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Đặt lại mật khẩu | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Đặt lại mật khẩu
+{% endblock %}
+
+{% block content %}
+<section>
+  <div class="page-heading">
+    <div>
+      <h2>Đặt lại mật khẩu</h2>
+      <p>
+        Thiết lập mật khẩu mới cho tài khoản
+        được quản trị viên lựa chọn.
+      </p>
+    </div>
+  </div>
+
+  <div class="detail-card password-card">
+    <div class="detail-card-heading">
+      <h3>Thông tin tài khoản</h3>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail-item">
+        <span>Mã tài khoản</span>
+        <strong>{{ tai_khoan.ma_tk }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>Tên đăng nhập</span>
+        <strong>{{ tai_khoan.username }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>Người dùng</span>
+        <strong>{{ ten_nguoi_dung }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>Vai trò</span>
+        <strong>
+          {{ tai_khoan.get_vai_tro_display }}
+        </strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-card password-card">
+    <form method="post">
+      {% csrf_token %}
+
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+
+          {{ field }}
+
+          {% for error in field.errors %}
+            <p class="error-message">
+              {{ error }}
+            </p>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      {% for error in form.non_field_errors %}
+        <p class="error-message">
+          {{ error }}
+        </p>
+      {% endfor %}
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="primary-button"
+        >
+          Lưu mật khẩu mới
+        </button>
+
+        <a
+          href="{% url 'accounts:danh_sach_tai_khoan' %}"
+          class="secondary-button"
+        >
+          Hủy
+        </a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

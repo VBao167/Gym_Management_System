@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Đổi mật khẩu | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Đổi mật khẩu
+{% endblock %}
+
+{% block content %}
+<section>
+  <div class="page-heading">
+    <div>
+      <h2>Đổi mật khẩu</h2>
+      <p>
+        Xác nhận mật khẩu hiện tại trước khi
+        thiết lập mật khẩu mới.
+      </p>
+    </div>
+  </div>
+
+  <div class="detail-card password-card">
+    <form method="post">
+      {% csrf_token %}
+
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+
+          {{ field }}
+
+          {% for error in field.errors %}
+            <p class="error-message">
+              {{ error }}
+            </p>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      {% for error in form.non_field_errors %}
+        <p class="error-message">
+          {{ error }}
+        </p>
+      {% endfor %}
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="primary-button"
+        >
+          Đổi mật khẩu
+        </button>
+
+        {% if request.user.vai_tro == "Admin" %}
+          <a
+            href="{% url 'accounts:danh_sach_tai_khoan' %}"
+            class="secondary-button"
+          >
+            Quay lại
+          </a>
+        {% else %}
+          <a
+            href="{% url 'gym:trang_hoi_vien' %}"
+            class="secondary-button"
+          >
+            Quay lại
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

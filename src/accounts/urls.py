@@ -21,6 +21,28 @@ urlpatterns = [
         name="dang_xuat",
     ),
     path(
+        "quan-ly-tai-khoan/",
+        views.danh_sach_tai_khoan,
+        name="danh_sach_tai_khoan",
+    ),
+    path(
+        "quan-ly-tai-khoan/<str:ma_tk>/"
+        "dat-lai-mat-khau/",
+        views.dat_lai_mat_khau,
+        name="dat_lai_mat_khau",
+    ),
+    path(
+        "quan-ly-tai-khoan/<str:ma_tk>/"
+        "doi-trang-thai/",
+        views.doi_trang_thai_tai_khoan,
+        name="doi_trang_thai_tai_khoan",
+    ),
+    path(
+        "doi-mat-khau/",
+        views.doi_mat_khau_cua_toi,
+        name="doi_mat_khau_cua_toi",
+    ),
+    path(
         "",
         views.trang_chu,
         name="trang_chu",

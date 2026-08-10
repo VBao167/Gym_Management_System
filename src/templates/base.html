@@ -35,19 +35,27 @@
             {% if request.user.vai_tro == "Admin" %}
               <p class="sidebar-heading">QUẢN TRỊ HỆ THỐNG</p>
 
-              <a
+            <a
                 href="{% url 'gym:trang_quan_tri' %}"
                 class="sidebar-link {% if request.resolver_match.url_name == 'trang_quan_tri' %}is-active{% endif %}"
-              >
+            >
                 <span class="sidebar-icon">01</span>
                 Tổng quan
-              </a>
+            </a>
+
+            <a
+                href="{% url 'accounts:danh_sach_tai_khoan' %}"
+                class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_tai_khoan' or request.resolver_match.url_name == 'dat_lai_mat_khau' or request.resolver_match.url_name == 'doi_mat_khau_cua_toi' %} is-active{% endif %}"
+            >
+                <span class="sidebar-icon">02</span>
+                Tài khoản
+            </a>
 
             <a
                 href="{% url 'gym:danh_sach_hoi_vien' %}"
                 class="sidebar-link {% if request.resolver_match.url_name == 'danh_sach_hoi_vien' %}is-active{% endif %}"
             >
-                <span class="sidebar-icon">02</span>
+                <span class="sidebar-icon">03</span>
                 Hội viên
             </a>
 
@@ -55,7 +63,7 @@
                 href="{% url 'gym:danh_sach_nhan_vien' %}"
                 class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_nhan_vien' or request.resolver_match.url_name == 'tao_nhan_vien_moi' or request.resolver_match.url_name == 'chi_tiet_nhan_vien' or request.resolver_match.url_name == 'chinh_sua_nhan_vien' %} is-active{% endif %}"
             >
-                <span class="sidebar-icon">03</span>
+                <span class="sidebar-icon">04</span>
                 Nhân viên
             </a>
 
@@ -63,7 +71,7 @@
                 href="{% url 'gym:danh_sach_goi_tap' %}"
                 class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_goi_tap' or request.resolver_match.url_name == 'tao_goi_tap_moi' or request.resolver_match.url_name == 'chinh_sua_goi_tap' %} is-active{% endif %}"
             >
-                <span class="sidebar-icon">04</span>
+                <span class="sidebar-icon">05</span>
                 Gói tập
             </a>
 
@@ -71,7 +79,7 @@
                 href="{% url 'gym:danh_sach_dang_ky_hoa_don' %}"
                 class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_dang_ky_hoa_don' or request.resolver_match.url_name == 'tao_dang_ky_hoa_don' or request.resolver_match.url_name == 'chi_tiet_dang_ky_hoa_don' %} is-active{% endif %}"
             >
-                <span class="sidebar-icon">05</span>
+                <span class="sidebar-icon">06</span>
                 Đăng ký và hóa đơn
             </a>
 
@@ -79,7 +87,7 @@
                 href="{% url 'gym:danh_sach_buoi_tap_pt' %}"
                 class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_buoi_tap_pt' or request.resolver_match.url_name == 'tao_buoi_tap_pt_moi' or request.resolver_match.url_name == 'chi_tiet_buoi_tap_pt' %} is-active{% endif %}"
             >
-                <span class="sidebar-icon">06</span>
+                <span class="sidebar-icon">07</span>
                 Lịch tập PT
             </a>
 
@@ -87,7 +95,7 @@
                 href="{% url 'gym:danh_sach_diem_danh' %}"
                 class="sidebar-link{% if request.resolver_match.url_name == 'danh_sach_diem_danh' or request.resolver_match.url_name == 'tao_diem_danh_moi' %} is-active{% endif %}"
             >
-                <span class="sidebar-icon">07</span>
+                <span class="sidebar-icon">08</span>
                 Điểm danh
             </a>
 
@@ -95,7 +103,7 @@
                 href="{% url 'gym:bao_cao_thong_ke' %}"
                 class="sidebar-link{% if request.resolver_match.url_name == 'bao_cao_thong_ke' %} is-active{% endif %}"
             >
-                <span class="sidebar-icon">08</span>
+                <span class="sidebar-icon">09</span>
                 Báo cáo
             </a>
 
@@ -250,6 +258,15 @@
           </header>
 
           <main class="content-area">
+    {% if messages %}
+        <div class="message-list">
+            {% for message in messages %}
+            <div class="system-message">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
     {% else %}
       <div class="auth-shell">
         <section class="auth-introduction">

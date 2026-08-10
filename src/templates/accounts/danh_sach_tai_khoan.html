@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Quản lý tài khoản | Hệ thống quản lý phòng Gym
+{% endblock %}
+
+{% block page_title %}
+  Quản lý tài khoản
+{% endblock %}
+
+{% block content %}
+<section>
+  <div class="page-heading">
+    <div>
+      <h2>Danh sách tài khoản</h2>
+      <p>
+        Quản lý trạng thái và mật khẩu đăng nhập
+        của người dùng trong hệ thống.
+      </p>
+    </div>
+
+    <div class="page-heading-actions">
+      <a
+        href="{% url 'accounts:doi_mat_khau_cua_toi' %}"
+        class="primary-button"
+      >
+        Đổi mật khẩu của tôi
+      </a>
+    </div>
+  </div>
+
+  <form method="get" class="detail-card">
+    <div class="detail-grid">
+      <div class="form-group">
+        <label for="tu_khoa">
+          Tìm kiếm
+        </label>
+        <input
+          id="tu_khoa"
+          type="text"
+          name="tu_khoa"
+          value="{{ tu_khoa }}"
+          placeholder="Mã TK, tên đăng nhập, họ tên"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="vai_tro">
+          Vai trò
+        </label>
+        <select
+          id="vai_tro"
+          name="vai_tro"
+        >
+          <option value="">
+            Tất cả vai trò
+          </option>
+
+          {% for gia_tri, nhan in cac_vai_tro %}
+            <option
+              value="{{ gia_tri }}"
+              {% if vai_tro_duoc_chon == gia_tri %}
+                selected
+              {% endif %}
+            >
+              {{ nhan }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="trang_thai">
+          Trạng thái tài khoản
+        </label>
+        <select
+          id="trang_thai"
+          name="trang_thai"
+        >
+          <option value="">
+            Tất cả trạng thái
+          </option>
+          <option
+            value="hoat_dong"
+            {% if trang_thai_duoc_chon == "hoat_dong" %}
+              selected
+            {% endif %}
+          >
+            Hoạt động
+          </option>
+          <option
+            value="bi_khoa"
+            {% if trang_thai_duoc_chon == "bi_khoa" %}
+              selected
+            {% endif %}
+          >
+            Bị khóa
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button
+        type="submit"
+        class="primary-button"
+      >
+        Lọc
+      </button>
+
+      <a
+        href="{% url 'accounts:danh_sach_tai_khoan' %}"
+        class="secondary-button"
+      >
+        Xóa lọc
+      </a>
+    </div>
+  </form>
+
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã TK</th>
+            <th>Tên đăng nhập</th>
+            <th>Người dùng</th>
+            <th>Vai trò</th>
+            <th>Trạng thái</th>
+            <th>Ngày tạo</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for tai_khoan in cac_tai_khoan %}
+            <tr>
+              <td>{{ tai_khoan.ma_tk }}</td>
+
+              <td>
+                {{ tai_khoan.username }}
+              </td>
+
+              <td>
+                {{ tai_khoan.ten_nguoi_dung }}
+              </td>
+
+              <td>
+                {{ tai_khoan.get_vai_tro_display }}
+              </td>
+
+              <td>
+                {% if tai_khoan.is_active %}
+                  <span
+                    class="status-badge status-active"
+                  >
+                    Hoạt động
+                  </span>
+                {% else %}
+                  <span
+                    class="status-badge status-inactive"
+                  >
+                    Bị khóa
+                  </span>
+                {% endif %}
+              </td>
+
+              <td>
+                {{ tai_khoan.date_joined|date:"d/m/Y H:i" }}
+              </td>
+
+              <td>
+                <div class="table-actions">
+                  {% if tai_khoan.vai_tro == "Admin" %}
+                    {% if tai_khoan.pk == request.user.pk %}
+                      <a
+                        href="{% url 'accounts:doi_mat_khau_cua_toi' %}"
+                        class="table-action-link"
+                      >
+                        Đổi mật khẩu
+                      </a>
+                    {% else %}
+                      <span class="muted-text">
+                        Chỉ xem
+                      </span>
+                    {% endif %}
+                  {% else %}
+                    <a
+                      href="{% url 'accounts:dat_lai_mat_khau' tai_khoan.ma_tk %}"
+                      class="table-action-link"
+                    >
+                      Đặt lại mật khẩu
+                    </a>
+
+                    <form
+                      method="post"
+                      action="{% url 'accounts:doi_trang_thai_tai_khoan' tai_khoan.ma_tk %}"
+                      class="inline-form"
+                    >
+                      {% csrf_token %}
+
+                      {% if tai_khoan.is_active %}
+                        <input
+                          type="hidden"
+                          name="hanh_dong"
+                          value="khoa"
+                        />
+
+                        <button
+                          type="submit"
+                          class="table-action-button table-action-danger"
+                        >
+                          Khóa
+                        </button>
+                      {% else %}
+                        <input
+                          type="hidden"
+                          name="hanh_dong"
+                          value="mo_khoa"
+                        />
+
+                        <button
+                          type="submit"
+                          class="table-action-button"
+                        >
+                          Mở khóa
+                        </button>
+                      {% endif %}
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td
+                colspan="7"
+                class="empty-state"
+              >
+                Không tìm thấy tài khoản phù hợp.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
