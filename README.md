@@ -1,7 +1,5 @@
 # Gym Management System
 
-Hệ thống quản lý phòng Gym được xây dựng trong khuôn khổ đồ án ngành.
-
 Dự án hướng đến việc quản lý hoạt động của **một phòng gym**, bao gồm quản lý người dùng, Hội viên, nhân viên, gói tập, đăng ký và gia hạn gói, hóa đơn, điểm danh, lịch tập PT, khu vực Hội viên và báo cáo thống kê.
 
 ## Công nghệ sử dụng
