@@ -13,7 +13,7 @@ Dự án hướng đến việc quản lý hoạt động của **một phòng g
 - HTML
 - CSS tùy chỉnh
 
-Frontend của hệ thống sử dụng Django Template kết hợp HTML/CSS thuần, không sử dụng Bootstrap hay JavaScript framework cho nghiệp vụ chính.
+Frontend: Django Templates, HTML và CSS
 
 ## Nhóm người dùng
 
