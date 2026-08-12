@@ -11,7 +11,7 @@ Dự án hướng đến việc quản lý hoạt động của **một phòng g
 - pyodbc
 - Django Template
 - HTML
-- CSS tùy chỉnh
+- CSS
 
 ## Nhóm người dùng
 
