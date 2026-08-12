@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from django.db import transaction
 from django.db.models import Q
@@ -1137,8 +1137,9 @@ def danh_sach_buoi_tap_pt(request):
     )
 
     la_lich_ca_nhan = False
-    ngay_duoc_chon = None
-    ngay_khong_hop_le = False
+    tu_ngay_duoc_chon = None
+    den_ngay_duoc_chon = None
+    khoang_ngay_khong_hop_le = False
     trang_thai_duoc_chon = ""
     cac_bo_loc_trang_thai = []
 
@@ -1159,9 +1160,12 @@ def danh_sach_buoi_tap_pt(request):
         )
 
         (
-            ngay_duoc_chon,
-            ngay_khong_hop_le,
-        ) = _lay_ngay_xem_lich_pt(request)
+            tu_ngay_duoc_chon,
+            den_ngay_duoc_chon,
+            khoang_ngay_khong_hop_le,
+        ) = _lay_khoang_ngay_xem_lich_pt(
+            request
+        )
 
         (
             trang_thai_duoc_chon,
@@ -1172,7 +1176,10 @@ def danh_sach_buoi_tap_pt(request):
 
         cac_buoi_tap = cac_buoi_tap.filter(
             huan_luyen_vien=huan_luyen_vien,
-            ngay_tap=ngay_duoc_chon,
+            ngay_tap__range=(
+                tu_ngay_duoc_chon,
+                den_ngay_duoc_chon,
+            ),
         )
 
         if trang_thai_duoc_chon:
@@ -1181,6 +1188,7 @@ def danh_sach_buoi_tap_pt(request):
             )
 
         cac_buoi_tap = cac_buoi_tap.order_by(
+            "ngay_tap",
             "gio_bat_dau",
             "ma_buoi",
         )
@@ -1203,9 +1211,14 @@ def danh_sach_buoi_tap_pt(request):
         {
             "cac_buoi_tap": cac_buoi_tap,
             "la_lich_ca_nhan": la_lich_ca_nhan,
-            "ngay_duoc_chon": ngay_duoc_chon,
-            "ngay_khong_hop_le": (
-                ngay_khong_hop_le
+            "tu_ngay_duoc_chon": (
+                tu_ngay_duoc_chon
+            ),
+            "den_ngay_duoc_chon": (
+                den_ngay_duoc_chon
+            ),
+            "khoang_ngay_khong_hop_le": (
+                khoang_ngay_khong_hop_le
             ),
             "trang_thai_duoc_chon": (
                 trang_thai_duoc_chon
@@ -1217,25 +1230,56 @@ def danh_sach_buoi_tap_pt(request):
     )
 
 
-def _lay_ngay_xem_lich_pt(request):
+def _lay_khoang_ngay_xem_lich_pt(request):
     hom_nay = timezone.localdate()
 
-    gia_tri_ngay = request.GET.get(
-        "ngay",
+    tu_ngay_mac_dinh = hom_nay
+    den_ngay_mac_dinh = (
+        hom_nay + timedelta(days=7)
+    )
+
+    gia_tri_tu_ngay = request.GET.get(
+        "tu_ngay",
         "",
     ).strip()
 
-    if not gia_tri_ngay:
-        return hom_nay, False
+    gia_tri_den_ngay = request.GET.get(
+        "den_ngay",
+        "",
+    ).strip()
+
+    tu_ngay = tu_ngay_mac_dinh
+    den_ngay = den_ngay_mac_dinh
 
     try:
-        ngay_duoc_chon = date.fromisoformat(
-            gia_tri_ngay
-        )
-    except ValueError:
-        return hom_nay, True
+        if gia_tri_tu_ngay:
+            tu_ngay = date.fromisoformat(
+                gia_tri_tu_ngay
+            )
 
-    return ngay_duoc_chon, False
+        if gia_tri_den_ngay:
+            den_ngay = date.fromisoformat(
+                gia_tri_den_ngay
+            )
+    except ValueError:
+        return (
+            tu_ngay_mac_dinh,
+            den_ngay_mac_dinh,
+            True,
+        )
+
+    if tu_ngay > den_ngay:
+        return (
+            tu_ngay_mac_dinh,
+            den_ngay_mac_dinh,
+            True,
+        )
+
+    return (
+        tu_ngay,
+        den_ngay,
+        False,
+    )
 
 
 def _lay_bo_loc_trang_thai_buoi_pt(request):
@@ -1754,6 +1798,13 @@ def trang_pt(request):
 
     hom_nay = timezone.localdate()
 
+    ngay_bat_dau_lich_sap_toi = (
+        hom_nay + timedelta(days=1)
+    )
+    ngay_ket_thuc_lich_sap_toi = (
+        hom_nay + timedelta(days=7)
+    )
+
     (
         trang_thai_duoc_chon,
         cac_bo_loc_trang_thai,
@@ -1787,6 +1838,29 @@ def trang_pt(request):
         )
     )
 
+    cac_buoi_tap_sap_toi = (
+        BuoiTapPT.objects
+        .filter(
+            huan_luyen_vien=huan_luyen_vien,
+            trang_thai=(
+                BuoiTapPT.TrangThai.DA_LEN_LICH
+            ),
+            ngay_tap__range=(
+                ngay_bat_dau_lich_sap_toi,
+                ngay_ket_thuc_lich_sap_toi,
+            ),
+        )
+        .select_related(
+            "dang_ky",
+            "dang_ky__hoi_vien",
+        )
+        .order_by(
+            "ngay_tap",
+            "gio_bat_dau",
+            "ma_buoi",
+        )
+    )
+
     return render(
         request,
         "gym/trang_chu/pt.html",
@@ -1797,6 +1871,15 @@ def trang_pt(request):
             "hom_nay": hom_nay,
             "cac_buoi_tap_hom_nay": (
                 cac_buoi_tap_hom_nay
+            ),
+            "cac_buoi_tap_sap_toi": (
+                cac_buoi_tap_sap_toi
+            ),
+            "ngay_bat_dau_lich_sap_toi": (
+                ngay_bat_dau_lich_sap_toi
+            ),
+            "ngay_ket_thuc_lich_sap_toi": (
+                ngay_ket_thuc_lich_sap_toi
             ),
             "trang_thai_duoc_chon": (
                 trang_thai_duoc_chon

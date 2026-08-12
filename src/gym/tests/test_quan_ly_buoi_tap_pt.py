@@ -244,9 +244,15 @@ class QuanLyBuoiTapPTTests(TestCase):
             ],
         )
 
-        self.assertNotContains(
-            response,
-            buoi_ngay_mai.ma_buoi,
+        self.assertEqual(
+            list(
+                response.context[
+                    "cac_buoi_tap_sap_toi"
+                ]
+            ),
+            [
+                buoi_ngay_mai,
+            ],
         )
 
         self.assertNotContains(
@@ -369,7 +375,7 @@ class QuanLyBuoiTapPTTests(TestCase):
             ],
         )
 
-    def test_lich_pt_cua_toi_mac_dinh_hom_nay(
+    def test_lich_pt_cua_toi_mac_dinh_7_ngay_toi(
         self
     ):
         buoi_hom_nay = (
@@ -406,9 +412,25 @@ class QuanLyBuoiTapPTTests(TestCase):
 
         self.assertEqual(
             response.context[
-                "ngay_duoc_chon"
+                "tu_ngay_duoc_chon"
             ],
             self.hom_nay,
+        )
+
+        self.assertEqual(
+            response.context[
+                "den_ngay_duoc_chon"
+            ],
+            (
+                self.hom_nay
+                + timedelta(days=7)
+            ),
+        )
+
+        self.assertFalse(
+            response.context[
+                "khoang_ngay_khong_hop_le"
+            ]
         )
 
         self.assertEqual(
@@ -419,15 +441,11 @@ class QuanLyBuoiTapPTTests(TestCase):
             ),
             [
                 buoi_hom_nay,
+                buoi_ngay_mai,
             ],
         )
 
-        self.assertNotContains(
-            response,
-            buoi_ngay_mai.ma_buoi,
-        )
-
-    def test_lich_pt_cua_toi_chon_ngay_khac(
+    def test_lich_pt_cua_toi_chon_mot_ngay_bang_khoang(
         self
     ):
         ngay_mai = (
@@ -452,7 +470,8 @@ class QuanLyBuoiTapPTTests(TestCase):
         response = self.client.get(
             self.url_danh_sach,
             {
-                "ngay": ngay_mai.isoformat(),
+                "tu_ngay": ngay_mai.isoformat(),
+                "den_ngay": ngay_mai.isoformat(),
             },
         )
 
@@ -463,7 +482,14 @@ class QuanLyBuoiTapPTTests(TestCase):
 
         self.assertEqual(
             response.context[
-                "ngay_duoc_chon"
+                "tu_ngay_duoc_chon"
+            ],
+            ngay_mai,
+        )
+
+        self.assertEqual(
+            response.context[
+                "den_ngay_duoc_chon"
             ],
             ngay_mai,
         )
@@ -484,7 +510,7 @@ class QuanLyBuoiTapPTTests(TestCase):
             buoi_hom_nay.ma_buoi,
         )
 
-    def test_lich_pt_cua_toi_loc_ngay_va_trang_thai(
+    def test_lich_pt_cua_toi_loc_khoang_ngay_va_trang_thai(
         self
     ):
         ngay_mai = (
@@ -516,7 +542,8 @@ class QuanLyBuoiTapPTTests(TestCase):
         response = self.client.get(
             self.url_danh_sach,
             {
-                "ngay": ngay_mai.isoformat(),
+                "tu_ngay": ngay_mai.isoformat(),
+                "den_ngay": ngay_mai.isoformat(),
                 "trang_thai": (
                     BuoiTapPT.TrangThai.VANG
                 ),
@@ -530,7 +557,14 @@ class QuanLyBuoiTapPTTests(TestCase):
 
         self.assertEqual(
             response.context[
-                "ngay_duoc_chon"
+                "tu_ngay_duoc_chon"
+            ],
+            ngay_mai,
+        )
+
+        self.assertEqual(
+            response.context[
+                "den_ngay_duoc_chon"
             ],
             ngay_mai,
         )
@@ -558,7 +592,7 @@ class QuanLyBuoiTapPTTests(TestCase):
             buoi_da_len_lich.ma_buoi,
         )
 
-    def test_lich_pt_cua_toi_ngay_sai_quay_ve_hom_nay(
+    def test_lich_pt_cua_toi_khoang_ngay_sai_quay_ve_mac_dinh(
         self
     ):
         buoi_hom_nay = (
@@ -572,7 +606,7 @@ class QuanLyBuoiTapPTTests(TestCase):
         response = self.client.get(
             self.url_danh_sach,
             {
-                "ngay": "khong-phai-ngay",
+                "tu_ngay": "khong-phai-ngay",
             },
         )
 
@@ -583,14 +617,24 @@ class QuanLyBuoiTapPTTests(TestCase):
 
         self.assertEqual(
             response.context[
-                "ngay_duoc_chon"
+                "tu_ngay_duoc_chon"
             ],
             self.hom_nay,
         )
 
+        self.assertEqual(
+            response.context[
+                "den_ngay_duoc_chon"
+            ],
+            (
+                self.hom_nay
+                + timedelta(days=7)
+            ),
+        )
+
         self.assertTrue(
             response.context[
-                "ngay_khong_hop_le"
+                "khoang_ngay_khong_hop_le"
             ]
         )
 
@@ -601,7 +645,49 @@ class QuanLyBuoiTapPTTests(TestCase):
 
         self.assertContains(
             response,
-            "Ngày được nhập không hợp lệ.",
+            "Khoảng ngày không hợp lệ.",
+        )
+
+        response = self.client.get(
+            self.url_danh_sach,
+            {
+                "tu_ngay": (
+                    self.hom_nay
+                    + timedelta(days=2)
+                ).isoformat(),
+                "den_ngay": (
+                    self.hom_nay
+                    + timedelta(days=1)
+                ).isoformat(),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            response.context[
+                "tu_ngay_duoc_chon"
+            ],
+            self.hom_nay,
+        )
+
+        self.assertEqual(
+            response.context[
+                "den_ngay_duoc_chon"
+            ],
+            (
+                self.hom_nay
+                + timedelta(days=7)
+            ),
+        )
+
+        self.assertTrue(
+            response.context[
+                "khoang_ngay_khong_hop_le"
+            ]
         )
 
     def test_admin_xem_danh_sach_nhung_khong_co_nut_tao(

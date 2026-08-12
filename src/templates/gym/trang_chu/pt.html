@@ -17,8 +17,8 @@
         </h2>
 
         <p>
-          Theo dõi lịch tập PT được phân công
-          trong ngày hôm nay.
+          Theo dõi lịch tập PT hôm nay
+          và các buổi được phân công sắp tới.
         </p>
       </div>
 
@@ -54,6 +54,7 @@
           <thead>
             <tr>
               <th>Mã buổi</th>
+              <th>Ngày tập</th>
               <th>Hội viên</th>
               <th>Thời gian</th>
               <th>Trạng thái</th>
@@ -68,6 +69,10 @@
                   <strong>
                     {{ buoi_tap.ma_buoi }}
                   </strong>
+                </td>
+
+                <td>
+                  {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
                 </td>
 
                 <td>
@@ -95,14 +100,94 @@
                   </a>
                 </td>
               </tr>
+
             {% empty %}
               <tr>
                 <td
-                  colspan="5"
+                  colspan="6"
                   class="empty-state"
                 >
                   Không có buổi tập PT phù hợp
                   trong ngày hôm nay.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div
+        class="detail-card-heading
+               schedule-results-heading"
+      >
+        <h3>
+          Lịch tập sắp tới
+          {{ ngay_bat_dau_lich_sap_toi|date:"d/m/Y" }}
+          –
+          {{ ngay_ket_thuc_lich_sap_toi|date:"d/m/Y" }}
+        </h3>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mã buổi</th>
+              <th>Ngày tập</th>
+              <th>Hội viên</th>
+              <th>Thời gian</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for buoi_tap in cac_buoi_tap_sap_toi %}
+              <tr>
+                <td>
+                  <strong>
+                    {{ buoi_tap.ma_buoi }}
+                  </strong>
+                </td>
+
+                <td>
+                  {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.dang_ky.hoi_vien.ma_hv }}
+                  —
+                  {{ buoi_tap.dang_ky.hoi_vien.ho_ten }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.gio_bat_dau|time:"H:i" }}
+                  –
+                  {{ buoi_tap.gio_ket_thuc|time:"H:i" }}
+                </td>
+
+                <td>
+                  {{ buoi_tap.get_trang_thai_display }}
+                </td>
+
+                <td>
+                  <a
+                    class="table-action-link"
+                    href="{% url 'gym:chi_tiet_buoi_tap_pt' buoi_tap.ma_buoi %}"
+                  >
+                    Xem chi tiết
+                  </a>
+                </td>
+              </tr>
+
+            {% empty %}
+              <tr>
+                <td
+                  colspan="6"
+                  class="empty-state"
+                >
+                  Không có buổi tập PT đã lên lịch
+                  trong 7 ngày tới.
                 </td>
               </tr>
             {% endfor %}

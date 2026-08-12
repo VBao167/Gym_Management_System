@@ -18,7 +18,7 @@
 
           <p>
             Theo dõi các buổi tập PT được phân công
-            theo từng ngày.
+            theo khoảng thời gian.
           </p>
         {% else %}
           <h2>Danh sách buổi tập PT</h2>
@@ -40,10 +40,10 @@
       {% endif %}
     </div>
 
-    {% if la_lich_ca_nhan %}
+        {% if la_lich_ca_nhan %}
       <div class="detail-card">
         <div class="detail-card-heading">
-          <h3>Chọn ngày xem lịch</h3>
+          <h3>Chọn khoảng thời gian xem lịch</h3>
         </div>
 
         <form
@@ -51,16 +51,30 @@
           class="schedule-filter-form"
         >
           <div class="form-group">
-            <label for="id_ngay">
-              Ngày tập
+            <label for="id_tu_ngay">
+              Từ ngày
             </label>
 
             <input
-              id="id_ngay"
+              id="id_tu_ngay"
               class="form-input"
               type="date"
-              name="ngay"
-              value="{{ ngay_duoc_chon|date:'Y-m-d' }}"
+              name="tu_ngay"
+              value="{{ tu_ngay_duoc_chon|date:'Y-m-d' }}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="id_den_ngay">
+              Đến ngày
+            </label>
+
+            <input
+              id="id_den_ngay"
+              class="form-input"
+              type="date"
+              name="den_ngay"
+              value="{{ den_ngay_duoc_chon|date:'Y-m-d' }}"
             />
           </div>
 
@@ -72,10 +86,11 @@
             />
           {% endif %}
 
-          {% if ngay_khong_hop_le %}
+          {% if khoang_ngay_khong_hop_le %}
             <p class="error-message">
-              Ngày được nhập không hợp lệ.
-              Hệ thống đang hiển thị lịch hôm nay.
+              Khoảng ngày không hợp lệ.
+              Hệ thống đang hiển thị lịch từ hôm nay
+              đến 7 ngày tới.
             </p>
           {% endif %}
 
@@ -92,8 +107,10 @@
                  schedule-results-heading"
         >
           <h3>
-            Các buổi tập PT ngày
-            {{ ngay_duoc_chon|date:"d/m/Y" }}
+            Các buổi tập PT từ
+            {{ tu_ngay_duoc_chon|date:"d/m/Y" }}
+            đến
+            {{ den_ngay_duoc_chon|date:"d/m/Y" }}
           </h3>
         </div>
 
@@ -101,7 +118,7 @@
           {% for gia_tri, nhan in cac_bo_loc_trang_thai %}
             <a
               class="{% if trang_thai_duoc_chon == gia_tri %}primary-button{% else %}secondary-button{% endif %}"
-              href="?ngay={{ ngay_duoc_chon|date:'Y-m-d' }}{% if gia_tri %}&trang_thai={{ gia_tri }}{% endif %}"
+              href="?tu_ngay={{ tu_ngay_duoc_chon|date:'Y-m-d' }}&den_ngay={{ den_ngay_duoc_chon|date:'Y-m-d' }}{% if gia_tri %}&trang_thai={{ gia_tri }}{% endif %}"
             >
               {{ nhan }}
             </a>
@@ -118,9 +135,10 @@
             <th>Hội viên</th>
 
             {% if not la_lich_ca_nhan %}
-              <th>Huấn luyện viên</th>
-              <th>Ngày tập</th>
+                <th>Huấn luyện viên</th>
             {% endif %}
+
+            <th>Ngày tập</th>
 
             <th>Thời gian</th>
             <th>Trạng thái</th>
@@ -145,15 +163,15 @@
 
               {% if not la_lich_ca_nhan %}
                 <td>
-                  {{ buoi_tap.huan_luyen_vien.ma_pt }}
-                  —
-                  {{ buoi_tap.huan_luyen_vien.ho_ten }}
+                    {{ buoi_tap.huan_luyen_vien.ma_pt }}
+                    —
+                    {{ buoi_tap.huan_luyen_vien.ho_ten }}
                 </td>
+            {% endif %}
 
-                <td>
-                  {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
-                </td>
-              {% endif %}
+            <td>
+                {{ buoi_tap.ngay_tap|date:"d/m/Y" }}
+            </td>
 
               <td>
                 {{ buoi_tap.gio_bat_dau|time:"H:i" }}
@@ -177,7 +195,7 @@
           {% empty %}
             <tr>
               <td
-                colspan="{% if la_lich_ca_nhan %}5{% else %}7{% endif %}"
+                colspan="{% if la_lich_ca_nhan %}6{% else %}7{% endif %}"
                 class="empty-state"
               >
                 Chưa có buổi tập PT phù hợp.
