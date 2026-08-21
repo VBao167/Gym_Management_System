@@ -1,6 +1,6 @@
 # Gym Management System
 
-Dự án xây dựng hệ thống quản lý phòng gym, giúp quản lý hội viên, gói tập, thanh toán, điểm danh và lịch tập PT, đồng thời cung cấp các chức năng riêng cho hội viên và hỗ trợ theo dõi hoạt động của phòng gym.
+Hệ thống quản lý phòng gym, giúp quản lý hội viên, gói tập, thanh toán, điểm danh và lịch tập PT, đồng thời cung cấp các chức năng riêng cho hội viên và hỗ trợ theo dõi hoạt động của phòng gym.
 
 ## Công nghệ sử dụng
 
